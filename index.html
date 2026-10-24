@@ -285,6 +285,30 @@ div.sumbar button{padding:4px 10px}
 .kp-pad.iso .iso-calc{font-size:12px;margin-top:2px}
 .kp-pad.iso .iso-calc:empty{display:none}
 body.kp-open .wrap{padding-bottom:260px}
+/* ===== 画面幅が狭いとき（スマホの文字サイズ大・ページ拡大を含む） ===== */
+#kpLabel{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modes button,.tools button,.sbtn,.chk,.conn button{overflow-wrap:anywhere}
+@media (max-width:420px){
+  .modes button{font-size:14px}.modes button small{font-size:10px}
+  .tools button{font-size:13px}
+}
+@media (max-width:360px){
+  .modes{grid-template-columns:repeat(2,1fr)}
+  .tools{grid-template-columns:repeat(3,1fr)}
+  .hrow h1{font-size:18px}
+  .kp-pad.iso .kp-body{grid-template-columns:1fr}
+  .kp-pad.iso .kp-extra{max-height:120px}
+  .kp-pad.iso .kp-keys{grid-auto-rows:32px}
+  .zoom{width:48px}.zoom button{width:48px;height:30px;font-size:16px}.zoom .zw{height:34px}
+  .lgbox{font-size:11px;padding:2px 6px}
+  .fbox{max-width:calc(100% - 64px);font-size:11px}
+  .iso-actions{gap:6px}.iso-actions button{padding:4px 8px}
+  .gaprow{flex-wrap:wrap}
+}
+@media (max-width:280px){
+  .modes,.tools{grid-template-columns:repeat(2,1fr)}
+  .iso-actions .primary{margin-left:0;width:100%}
+}
 </style>
 </head>
 <body data-mode="weld">
@@ -320,7 +344,7 @@ body.kp-open .wrap{padding-bottom:260px}
     </div>
     <p class="hint" id="isoHint"></p>
     <div id="isoBox">
-      <svg id="isoSvg" xmlns="http://www.w3.org/2000/svg"><g id="world"><g id="grid"></g><g id="pipes"></g><g id="marks"></g><g id="labels"></g></g></svg>
+      <svg id="isoSvg" xmlns="http://www.w3.org/2000/svg"><g id="world"><g id="grid"></g><g id="pipes"></g><g id="marks"></g><g id="labels"></g><g id="labelsW"></g></g><g id="labelsS"></g></svg>
       <div class="fbox" id="fbox" hidden></div>
       <div class="lgbox" aria-label="凡例"><span class="lk">口径</span><span class="lsep"> / </span><span class="c-blue">全長</span><span class="lsep"> / </span><span class="c-red">カット長</span></div>
       <div class="zoom"><button type="button" id="zIn" aria-label="拡大">＋</button><button type="button" id="zOut" aria-label="縮小">−</button><button type="button" id="zFit" aria-label="全体表示">⤢</button>
@@ -861,7 +885,35 @@ function buildGrid(){
   for(let c=-2*R;c<=2*R;c++){const a=ppos(KK(-R,c+R)),b=ppos(KK(R,c-R));d+=`M${fx(a.x)} ${fx(a.y)}L${fx(b.x)} ${fx(b.y)}`;}
   document.getElementById("grid").innerHTML=`<path d="${d}" class="gridline"/>`;
 }
-function applyView(){const v=V();world.setAttribute("transform",`translate(${v.x},${v.y}) scale(${v.k})`);}
+function applyView(){const v=V();world.setAttribute("transform",`translate(${v.x},${v.y}) scale(${v.k})`);
+  if(!applyView.q){applyView.q=requestAnimationFrame(()=>{applyView.q=0;renderLabels();});}}
+let LBL=null;
+/* 寸法の文字を、表示中の拡大率に合わせて画面座標へ置き直す。v を省略すると画面表示、{x:0,y:0,k:1} なら図面座標（書き出し用） */
+function labelsHTML(v){
+  if(!LBL)return {html:"",boxes:[]};
+  const k=v.k,S2=p=>({x:p.x*k+v.x,y:p.y*k+v.y});
+  const T=LBL.TL.map(l=>{
+    let x,y,mir=null;
+    if(l.mir){const m=l.mir,d=(l.x-m.rx)*m.nx+(l.y-m.ry)*m.ny,pr=S2({x:l.x-d*m.nx,y:l.y-d*m.ny});
+      x=pr.x+d*m.nx;y=pr.y+d*m.ny; // 線からの離れ具合は画面上の一定の距離のまま
+      const r=S2({x:m.rx,y:m.ry}),a=S2({x:m.ax,y:m.ay}),b=S2({x:m.bx,y:m.by});
+      mir={rx:r.x,ry:r.y,ax:a.x,ay:a.y,bx:b.x,by:b.y,nx:m.nx,ny:m.ny};}
+    else{const q=S2(l);x=q.x;y=q.y;}
+    return {x,y,parts:l.parts,anc:l.anc,dir:l.dir,t:0,f:false,p:0,mir,tg:l.tg};});
+  const obs=[];
+  for(const [a0,b0] of LBL.segs){const a=S2(a0),b=S2(b0),L=Math.hypot(b.x-a.x,b.y-a.y),st=Math.max(1,Math.ceil(L/8));
+    for(let i=0;i<=st;i++){const x=a.x+(b.x-a.x)*i/st,y=a.y+(b.y-a.y)*i/st;obs.push({x0:x-3,x1:x+3,y0:y-3,y1:y+3});}}
+  for(const nd of LBL.nodes){const c=S2(nd.c),r=nd.r*Math.max(k,0.5);obs.push({x0:c.x-r,x1:c.x+r,y0:c.y-r,y1:c.y+r});}
+  layoutLabels(T,obs);
+  let h="";
+  for(const l of T){const ld=leaderOf(l);if(ld)h+=ln(ld[0],ld[1],"leader")+dot(ld[0],1.3,"leaddot");}
+  for(const l of T){const q=placeLabel(l,l.t,l.f,l.p);h+=tx(q.x,q.y,l.parts,q.anc);}
+  return {html:h,boxes:T.filter(l=>l.tg).map(l=>({b:labelBox(l),tg:l.tg}))};
+}
+function renderLabels(){
+  const g=document.getElementById("labelsS");if(!g||!isIso())return;
+  const r=labelsHTML(V());g.innerHTML=r.html;LBOX=r.boxes; // LBOX は画面座標
+}
 const ln=(a,b,c)=>`<line x1="${fx(a.x)}" y1="${fx(a.y)}" x2="${fx(b.x)}" y2="${fx(b.y)}" class="${c}"/>`;
 const poly=(ps,c)=>`<polygon points="${ps.map(p=>fx(p.x)+","+fx(p.y)).join(" ")}" class="${c}"/>`;
 const at=(c,d,u,v)=>({x:c.x+d.x*u-d.y*v,y:c.y+d.y*u+d.x*v}); // d方向にu、直角方向にv
@@ -1031,17 +1083,10 @@ function renderIso(){
   document.getElementById("pipes").innerHTML=pipes.join("");
   document.getElementById("marks").innerHTML=marks.join("");
   // 文字の重なりを避ける：配管と継手は動かさず、余裕のある方の文字を逃がす
-  const obs=[];
-  for(const p of G.pieces){const a=ppos(p.a),b=ppos(p.b),L=Math.hypot(b.x-a.x,b.y-a.y),st=Math.max(1,Math.ceil(L/8));
-    for(let i=0;i<=st;i++){const x=a.x+(b.x-a.x)*i/st,y=a.y+(b.y-a.y)*i/st;obs.push({x0:x-3,x1:x+3,y0:y-3,y1:y+3});}}
-  for(const nd of G.nodes.values()){const c=PD.c[nd.k]||ppos(nd.k),r=(isPartT(nd.type)||nd.type==="pend")?12:6;obs.push({x0:c.x-r,x1:c.x+r,y0:c.y-r,y1:c.y+r});}
-  layoutLabels(TL,obs);
-  LBOX=TL.filter(l=>l.tg).map(l=>({b:labelBox(l),tg:l.tg}));
-  const lead=[],texts=[];
-  for(const l of TL){const q=placeLabel(l,l.t,l.f,l.p);
-    const ld=leaderOf(l);if(ld)lead.push(ln(ld[0],ld[1],"leader"),dot(ld[0],1.3,"leaddot"));
-    texts.push(tx(q.x,q.y,l.parts,q.anc));}
-  document.getElementById("labels").innerHTML=labels.join("")+lead.join("")+texts.join("");
+  // 寸法の文字は画面座標で配置する（拡大縮小しても文字の大きさは変わらない）
+  LBL={TL,segs:G.pieces.map(p=>[ppos(p.a),ppos(p.b)]),nodes:[...G.nodes.values()].map(nd=>({c:PD.c[nd.k]||ppos(nd.k),r:(isPartT(nd.type)||nd.type==="pend")?12:6}))};
+  document.getElementById("labels").innerHTML=labels.join("");
+  renderLabels();
   document.getElementById("calcBtn").textContent=S.iso.showCut?"カット寸法を隠す":"切断寸法計算";
   renderSum();
   updUR();
@@ -1226,7 +1271,7 @@ function isoTap(w){
   if(isoMode==="pan")return;
   if(isoMode==="dim"){
     // 寸法の文字をタップしたら、その入力欄を開く
-    const pad=6/V().k,hit=LBOX.find(h=>w.x>=h.b.x0-pad&&w.x<=h.b.x1+pad&&w.y>=h.b.y0-pad&&w.y<=h.b.y1+pad);
+    const v=V(),sx=w.x*v.k+v.x,sy=w.y*v.k+v.y,pad=6,hit=LBOX.find(h=>sx>=h.b.x0-pad&&sx<=h.b.x1+pad&&sy>=h.b.y0-pad&&sy<=h.b.y1+pad);
     if(hit&&G.rmap.get(hit.tg.run))return openIsoEdit(hit.tg.run,hit.tg.f);
     const nd=nearestNode(w,18/V().k,n=>isPartT(n.type)||n.type==="pend");
     if(nd)return openIsoEdit(nd.pieces[0].run.key,(nd.type==="pend"?"len:":"pos:")+nd.k);
@@ -1589,9 +1634,10 @@ const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 function buildExportSvg(){
   const prev=S.iso.showCut,prevSel=sel;S.iso.showCut=true;sel=null;renderIso();
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  for(const id of ["pipes","marks","labels"]){const g=document.getElementById(id);if(!g.childNodes.length)continue;
+  const lw=document.getElementById("labelsW");lw.innerHTML=labelsHTML({x:0,y:0,k:1}).html;
+  for(const id of ["pipes","marks","labels","labelsW"]){const g=document.getElementById(id);if(!g.childNodes.length)continue;
     const b=g.getBBox();x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.width);y1=Math.max(y1,b.y+b.height);}
-  const body=["grid","pipes","marks","labels"].map(id=>`<g>${document.getElementById(id).innerHTML}</g>`).join("");
+  const body=["grid","pipes","marks","labels","labelsW"].map(id=>`<g>${document.getElementById(id).innerHTML}</g>`).join("");lw.innerHTML="";
   // 口径ごとの合計
   const tot={};for(const p of G.pieces){const r=pieceCalc(p);if(r.cut!==undefined){const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n++;tot[s].sum+=r.cut;}}
   const lines=Object.keys(tot).sort((a,b)=>a-b).map(s=>`${s}A　${tot[s].n}本　カット合計 ${r1(tot[s].sum)} mm`);
