@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>SGP 切断長計算</title>
+<meta name="robots" content="noindex, nofollow">
 <style>
 :root{
   --bg:#EEF1F3; --surface:#FFFFFF; --ink:#1E2830; --sub:#5E6B75; --line:#C9D1D7;
@@ -254,7 +255,7 @@ div.sumbar button{padding:4px 10px}
 /* 確認ダイアログ */
 .sheet.cfm{z-index:50;align-items:center}
 .cfm .sheet-in{border-radius:14px;margin:16px;max-width:400px}
-#cfmMsg{font-size:16px;font-weight:700;margin:4px 0 14px;line-height:1.6}
+#cfmMsg{font-size:16px;font-weight:700;margin:4px 0 14px;line-height:1.6;white-space:pre-line}
 #cfmOk.danger{background:var(--red);color:#fff;border-color:var(--red)}
 .fbox{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 82px);max-height:45%;overflow:auto;z-index:2;background:var(--surface);
   border:1px solid var(--line);border-left:4px solid var(--red);border-radius:6px;padding:4px 8px;font-size:12px;line-height:1.55;box-shadow:0 1px 4px rgba(0,0,0,.15)}
@@ -309,6 +310,14 @@ body.kp-open .wrap{padding-bottom:260px}
   .modes,.tools{grid-template-columns:repeat(2,1fr)}
   .iso-actions .primary{margin-left:0;width:100%}
 }
+.upbox{position:absolute;left:8px;top:36px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:11px;color:var(--sub);opacity:.95;pointer-events:none}
+.upbox[hidden]{display:none}
+.namerow{display:block;font-size:13px;color:var(--sub);margin:0 0 10px}
+.namerow input{display:block;width:100%;margin-top:3px;text-align:left}
+.appfoot{margin:22px 0 0;padding:12px 2px 0;border-top:1px solid var(--line);color:var(--sub)}
+.appfoot .disc{font-size:12px;line-height:1.7;margin:0 0 8px}
+.appfoot .copy{font-size:12px;margin:0;text-align:center}
+body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
 </style>
 </head>
 <body data-mode="weld">
@@ -346,6 +355,7 @@ body.kp-open .wrap{padding-bottom:260px}
     <div id="isoBox">
       <svg id="isoSvg" xmlns="http://www.w3.org/2000/svg"><g id="world"><g id="grid"></g><g id="pipes"></g><g id="marks"></g><g id="labels"></g><g id="labelsW"></g></g><g id="labelsS"></g></svg>
       <div class="fbox" id="fbox" hidden></div>
+      <div class="upbox" id="upbox" hidden></div>
       <div class="lgbox" aria-label="凡例"><span class="lk">口径</span><span class="lsep"> / </span><span class="c-blue">全長</span><span class="lsep"> / </span><span class="c-red">カット長</span></div>
       <div class="zoom"><button type="button" id="zIn" aria-label="拡大">＋</button><button type="button" id="zOut" aria-label="縮小">−</button><button type="button" id="zFit" aria-label="全体表示">⤢</button>
         <span class="zsep"></span>
@@ -356,7 +366,6 @@ body.kp-open .wrap{padding-bottom:260px}
     <div class="iso-actions">
       <button type="button" id="isoClear">全消去</button>
       <button type="button" id="shareBtn">📤 共有</button>
-      <button type="button" class="primary" id="calcBtn">切断寸法計算</button>
     </div>
     <div id="isoSum"></div>
   </section>
@@ -379,6 +388,10 @@ body.kp-open .wrap{padding-bottom:260px}
     <p class="note" id="tblNote"></p>
     <button class="mini" id="resetTbl">寸法を初期値に戻す</button>
   </details>
+  <footer class="appfoot">
+    <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
+    <p class="copy">SGP 切断長計算 v1.0.0　© 2026 retzrs-ops. All rights reserved.</p>
+  </footer>
 </div>
 
 <div class="sumbar"><div class="total-in">
@@ -396,7 +409,9 @@ body.kp-open .wrap{padding-bottom:260px}
 <div class="sheet" id="shareSheet" hidden>
   <div class="sheet-in" role="dialog" aria-label="書き出し・共有">
     <h3>書き出し・共有</h3>
+    <label class="namerow">あなたの名前（最終更新者として図面に記録）<input id="userName" type="text" maxlength="20" autocomplete="name" placeholder="例：山田"></label>
     <button type="button" class="sbtn" id="exPng">🖼 図面を画像で保存・送る（PNG）<small>カット寸法入りの図面。Claudeアプリでは共有メニューからLINEを選べます</small></button>
+    <button type="button" class="sbtn" id="exDxf">📐 DXFで書き出す（アイソメ図＋5面図）<small>入力した寸法で作図。上・正面・右・背面・左の5面図つき。寸法不明は推定値で記入</small></button>
     <button type="button" class="sbtn" id="exLink">🔗 共有リンクを作る（LINEで送る）<small>リンクを開くと同じ図面が開き、続きを編集できます</small></button>
     <div id="linkBox" hidden>
       <textarea readonly id="linkText" rows="3"></textarea>
@@ -491,6 +506,7 @@ function fromSaved(s){
     if(s.isoT)n.isoT=s.isoT;
     if(!n.iso.runs)n.iso.runs={};
     if(s.lastToken)n.lastToken=s.lastToken;
+    if(s.userName)n.userName=s.userName;
     if(Array.isArray(s.segs))n.segs.weld=s.segs;
     else if(s.segs){n.segs.weld=s.segs.weld;n.segs.thread=s.segs.thread;}
   }
@@ -499,7 +515,14 @@ function fromSaved(s){
     if(!n.segs[m]||!n.segs[m].length)n.segs[m]=[{type:"cc",size:"25",len:"",a:first(m),b:first(m)}];
   return n;
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+let lastSig=null; // アイソメ図の中身の指紋（変わったときだけ最終更新を記録する）
+function isoSig(){try{const o=Object.assign({},S.iso);o.view=null;o.showCut=false;o.meta=null;return JSON.stringify(o);}catch(_){return "";}}
+function markSig(){lastSig=(S.mode==="iso"||S.mode==="isoT")?isoSig():null;}
+function save(){
+  if((S.mode==="iso"||S.mode==="isoT")&&S.iso){const g=isoSig();
+    if(lastSig!==null&&g!==lastSig)S.iso.meta={by:S.userName||"",at:new Date().toISOString()};
+    lastSig=g;}
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 const r1=n=>Math.round(n*10)/10;
 const segs=()=>S.segs[S.mode];
 const isIso=()=>S.mode==="iso"||S.mode==="isoT";
@@ -622,7 +645,7 @@ function setMode(m){
   closeKp();
   if((S.mode==="isoT")!==(m==="isoT")){const t=S.iso;S.iso=S.isoT||freshIso();S.isoT=t;
     if(!S.iso.runs)S.iso.runs={};E=new Set(S.iso.edges);undoStack=[];redoStack=[];redoMark=null;sel=null;}
-  S.mode=m;save();applyMode();
+  S.mode=m;markSig();save();applyMode();
 }
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 
@@ -706,6 +729,8 @@ const REF={open:"先",flange:"面",pend:"端",elbow:"芯",tee:"芯",valve:"面",
 const CIR="①②③④⑤⑥⑦⑧⑨⑩⑪⑫";
 const isPartT=t=>t==="valve"||t==="flex"||t==="fpair"||t==="reducer";
 const fx=n=>Math.round(n*10)/10;
+function metaText(m){if(!m||!m.at)return "";const d=new Date(m.at),z=n=>String(n).padStart(2,"0");
+  return `${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}　${m.by?m.by:"（名前未設定）"}`;}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let E=new Set(S.iso.edges),G=null,undoStack=[],isoMode="draw",isoTool="valve",sel=null,LBOX=[];
 if(!S.iso.runs)S.iso.runs={};
@@ -723,7 +748,7 @@ function pushUndo(){const j=JSON.stringify(S.iso);
   if(undoStack.length&&stripView(undoStack[undoStack.length-1])===stripView(j))return false; // 変化のない重複は積まない
   undoStack.push(j);if(undoStack.length>60)undoStack.shift();updUR();return true;}
 let redoStack=[],redoMark=null;
-const stripView=j=>{try{const o=JSON.parse(j);o.view=null;o.showCut=false;return JSON.stringify(o);}catch(_){return j;}};
+const stripView=j=>{try{const o=JSON.parse(j);o.view=null;o.showCut=false;o.meta=null;return JSON.stringify(o);}catch(_){return j;}};
 const snap=()=>stripView(JSON.stringify(S.iso));
 function updUR(){const u=document.getElementById("undoBtn"),r=document.getElementById("redoBtn");if(!u||!r)return;
   u.disabled=!undoStack.length;r.disabled=!(redoStack.length&&snap()===redoMark);}
@@ -963,6 +988,7 @@ function partDraw(){
 }
 function renderIso(){
   if(!isIso())return;
+  S.iso.showCut=true; // カット長は常に表示
   G=analyze();computeRuns();
   const pipes=[],marks=[],labels=[],TL=[];
   const lbl=(x,y,parts,anc,dir,mir)=>TL.push({x,y,parts,anc:anc||"middle",dir:dir||{x:0,y:-1},t:0,f:false,p:0,mir:mir||null});
@@ -1089,10 +1115,10 @@ function renderIso(){
   LBL={TL,segs:G.pieces.map(p=>[ppos(p.a),ppos(p.b)]),nodes:[...G.nodes.values()].map(nd=>({c:PD.c[nd.k]||ppos(nd.k),r:(isPartT(nd.type)||nd.type==="pend")?12:6}))};
   document.getElementById("labels").innerHTML=labels.join("");
   renderLabels();
-  document.getElementById("calcBtn").textContent=S.iso.showCut?"カット寸法を隠す":"切断寸法計算";
   renderSum();
   updUR();
   renderFbox();
+  const ub=document.getElementById("upbox"),mt=metaText(S.iso.meta);ub.textContent=mt?"最終更新 "+mt:"";ub.hidden=!mt;
 }
 
 /* 文字の大きさの見積もり */
@@ -1560,12 +1586,11 @@ document.getElementById("isoClear").onclick=async()=>{
   if(!await askConfirm("【最終確認】図面をすべて消去します。配管・部品・入力した寸法がすべて消えます。本当に消しますか？","すべて消去する",true))return;
   pushUndo();closeKp();sel=null;E.clear();S.iso.edges=[];S.iso.parts={};S.iso.opt={};S.iso.pieces={};S.iso.runs={};S.iso.showCut=false;save();renderIso();toast("図面を消去しました（↶戻すで元に戻せます）");
 };
-document.getElementById("calcBtn").onclick=()=>{S.iso.showCut=!S.iso.showCut;save();renderIso();if(sel)refreshPanel(false);
-  if(S.iso.showCut)setTimeout(()=>document.getElementById("isoSum").scrollIntoView({block:"nearest",behavior:"smooth"}),50);};
 const isoSize=document.getElementById("isoSize");
 isoSize.innerHTML=SIZES.map(s=>`<option value="${s}">${s}A</option>`).join("");
 isoSize.onchange=()=>{S.iso.size=isoSize.value;save();renderIso();};
 function initIso(){
+  markSig();
   isoSize.value=S.iso.size;
   if(!S.iso.view){const r=svg.getBoundingClientRect();S.iso.view={x:r.width/2,y:r.height/2,k:1};}
   applyView();setIsoMode(isoMode);renderIso();
@@ -1580,6 +1605,7 @@ function askConfirm(msg,ok,danger){return new Promise(res=>{
   b.onclick=()=>done(true);n.onclick=()=>done(false);});}
 
 /* ===================== 書き出し・共有 ===================== */
+const COPY="© 2026 retzrs-ops";
 // Claudeの中で開いているか（GitHub Pages など普通のブラウザでも動くように切り替える）
 const inClaude=()=>!!(window.claude&&typeof window.claude.use==="function");
 const SHARE_URL=()=>inClaude()?"https://claude.ai/artifact/N5aR35tRUfyyqe1bnQ9nKA":location.origin+location.pathname;
@@ -1591,12 +1617,15 @@ function openSheet(){
   closeKp();
   const iso=isIso();
   document.getElementById("exPng").style.display=iso?"":"none";
+  document.getElementById("exDxf").style.display=iso?"":"none";
   document.getElementById("exLink").style.display=iso?"":"none";
   document.getElementById("isoOnlyNote").style.display=iso?"none":"";
   document.getElementById("linkBox").hidden=true;document.getElementById("preview").hidden=true;
   sheet.hidden=false;
 }
 document.getElementById("shareBtn").onclick=openSheet;
+const nameIn=document.getElementById("userName");nameIn.value=S.userName||"";
+nameIn.addEventListener("input",()=>{S.userName=nameIn.value.trim();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}});
 document.getElementById("shareBtn2").onclick=openSheet;
 document.getElementById("closeSheet").onclick=()=>{sheet.hidden=true;};
 sheet.addEventListener("click",e=>{if(e.target===sheet)sheet.hidden=true;});
@@ -1630,7 +1659,7 @@ const EXPORT_CSS=`.pipe{stroke:#1E2830;stroke-width:4;stroke-linecap:round}.selp
 .lbl{font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic","Meiryo",sans-serif;font-size:12px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;fill:#1E2830}
 .lbl .blue{fill:#1565C0}.lbl .red{fill:#C62828}.lbl .muted{fill:#5E6B75;font-weight:500;font-size:10px}
 .lbl .sz{fill:#5E6B75;font-weight:600;font-size:9.5px}.lbl .sm{fill:#1E2830;font-size:9.5px;font-weight:700}.lbl .warn{fill:#C62828}
-.lbl .dimcap{fill:#1565C0;font-size:9px;font-weight:600}.lbl .total{font-size:13px}.lbl .szb{fill:#1E2830;font-size:11px;font-weight:800}.lbl .cutcap{fill:#C62828;font-size:9px;font-weight:600}.ttl{font-size:16px}.foot{font-size:11px;font-weight:600}`;
+.lbl .dimcap{fill:#1565C0;font-size:9px;font-weight:600}.lbl .total{font-size:13px}.lbl .szb{fill:#1E2830;font-size:11px;font-weight:800}.lbl .cutcap{fill:#C62828;font-size:9px;font-weight:600}.ttl{font-size:16px}.sm2{font-size:9px;font-weight:500;fill:#5E6B75}.foot{font-size:11px;font-weight:600}`;
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 function buildExportSvg(){
@@ -1645,14 +1674,15 @@ function buildExportSvg(){
   const lines=Object.keys(tot).sort((a,b)=>a-b).map(s=>`${s}A　${tot[s].n}本　カット合計 ${r1(tot[s].sum)} mm`);
   S.iso.showCut=prev;sel=prevSel;renderIso();
   if(x0>x1)return null;
-  const pad=30,top=60,footH=10+lines.length*16;
+  const pad=30,top=60,footH=30+lines.length*16;
   const vx=x0-pad,vy=y0-pad-top,W=Math.max(x1-x0+pad*2,320),H=y1-y0+pad*2+top+footH;
   const lg=`<text x="${fx(vx+16)}" y="${fx(vy+48)}" class="lbl foot">凡例：<tspan class="szb">口径</tspan><tspan class="sep"> / </tspan><tspan class="blue">全長</tspan><tspan class="sep"> / </tspan><tspan class="red">カット長</tspan></text>`;
   let foot="";
   lines.forEach((l,i)=>foot+=`<text x="${fx(vx+16)}" y="${fx(y1+pad+16+i*16)}" class="lbl foot">${esc(l)}</text>`);
+  foot+=`<text x="${fx(vx+16)}" y="${fx(y1+pad+20+lines.length*16)}" class="lbl foot sm2">${COPY}　計算値は目安です。施工前に必ず現物・メーカー資料で確認してください。</text>`;
   const svgStr=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${fx(vx)} ${fx(vy)} ${fx(W)} ${fx(H)}" width="${Math.round(W)}" height="${Math.round(H)}"><style>${EXPORT_CSS}</style>`+
     `<rect x="${fx(vx)}" y="${fx(vy)}" width="${fx(W)}" height="${fx(H)}" fill="#fff"/>${body}`+
-    `<text x="${fx(vx+16)}" y="${fx(vy+28)}" class="lbl ttl">SGP アイソメ図（${SYS()==="thread"?"白管・ねじ込み":"黒管・溶接"}）　${today().s}</text>${lg}${foot}</svg>`;
+    `<text x="${fx(vx+16)}" y="${fx(vy+28)}" class="lbl ttl">SGP アイソメ図（${SYS()==="thread"?"白管・ねじ込み":"黒管・溶接"}）　${today().s}${S.iso.meta&&S.iso.meta.at?"　最終更新 "+esc(metaText(S.iso.meta)):""}</text>${lg}${foot}</svg>`;
   return {svgStr,W,H};
 }
 async function exportPng(){
@@ -1684,7 +1714,7 @@ function applyImported(state,isoOnly){
     if(state.pack!==undefined)S.pack=state.pack;
   }else{S=fromSaved(state);}
   if(!S.iso.runs)S.iso.runs={};
-  E=new Set(S.iso.edges);sel=null;save();applyMode();if(isIso())setTimeout(fitView,50);
+  E=new Set(S.iso.edges);sel=null;markSig();save();applyMode();if(isIso())setTimeout(fitView,50);
 }
 document.getElementById("imJson").onclick=()=>document.getElementById("imFile").click();
 document.getElementById("imFile").addEventListener("change",async e=>{
@@ -1731,11 +1761,259 @@ async function checkHash(){
   if(!t||!/^[zj][A-Za-z0-9_-]+$/.test(t)||S.lastToken===t)return;
   try{const o=await unpack(t);if(!o||o.app!=="sgp-iso"||!o.iso)return;
     S.lastToken=t;save();
-    if(!await askConfirm("共有された図面を開きますか？（今のアイソメ図は上書きされます）","開く",false))return;
+    const mi=o.iso.meta,mine=(o.sys==="thread"?(S.mode==="isoT"?S.iso:S.isoT):(S.mode==="isoT"?S.isoT:S.iso))||{};
+    let msg="共有された図面を開きますか？（今のアイソメ図は上書きされます）";
+    if(mi&&mi.at)msg=`${mi.by||"名前未設定の人"}さんが ${metaText(mi).split("　")[0]} に更新した図面です。開きますか？（今のアイソメ図は上書きされます）`;
+    if(mine.meta&&mine.meta.at&&mi&&mi.at&&mine.meta.at>mi.at)msg+=`\n※手元の図面の方が新しいです（${metaText(mine.meta)}）`;
+    if(!await askConfirm(msg,"開く",false))return;
     applyImported(o,true);toast("共有された図面を読み込みました");
   }catch(_){}
 }
 setTimeout(checkHash,300);
+
+/* ===================== DXF書き出し（アイソメ図＋5面図） ===================== */
+// SGP外径・JIS 10K フランジ（外径・厚さ）の目安（mm）
+const SGP_OD={"15":21.7,"20":27.2,"25":34.0,"32":42.7,"40":48.6,"50":60.5,"65":76.3,"80":89.1};
+const FL_OD={"15":95,"20":100,"25":125,"32":135,"40":140,"50":155,"65":175,"80":185};
+const FL_T={"15":12,"20":14,"25":14,"32":16,"40":16,"50":16,"65":18,"80":18};
+const V3=(x,y,z)=>({x,y,z}),vadd=(a,b)=>V3(a.x+b.x,a.y+b.y,a.z+b.z),vmul=(a,k)=>V3(a.x*k,a.y*k,a.z*k),vdot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const STEP3={"1,0":V3(1,0,0),"-1,0":V3(-1,0,0),"1,-1":V3(0,1,0),"-1,1":V3(0,-1,0),"0,-1":V3(0,0,1),"0,1":V3(0,0,-1)};
+// 文字は \U+XXXX に置き換える（日本語をDXFで扱うため）
+const dxfTxt=s=>String(s).replace(/©/g,"(C)").replace(/[\r\n]/g," ");
+// 日本語のCAD（JW_CAD・AutoCAD日本語版など）で読めるよう、DXFは Shift_JIS で書き出す
+let SJ=null;
+function sjisMap(){
+  if(SJ)return SJ;SJ=new Map();const dec=new TextDecoder("shift_jis");
+  for(let b=0xA1;b<=0xDF;b++){const c=dec.decode(new Uint8Array([b]));if(c.length===1)SJ.set(c,[b]);}
+  for(let l=0x81;l<=0xFC;l++){if(l>0x9F&&l<0xE0)continue;
+    for(let t=0x40;t<=0xFC;t++){if(t===0x7F)continue;const c=dec.decode(new Uint8Array([l,t]));if(c.length===1&&c!=="\uFFFD"&&!SJ.has(c))SJ.set(c,[l,t]);}}
+  return SJ;
+}
+function toSJIS(str){
+  let m=null;try{m=sjisMap();}catch(_){m=null;}
+  if(!m)return new TextEncoder().encode(str); // Shift_JIS が使えない古い環境
+  const out=[];for(const ch of str){const c=ch.codePointAt(0);if(c<0x80){out.push(c);continue;}const b=m.get(ch);if(b)out.push(...b);else out.push(0x3F);}
+  return new Uint8Array(out);
+}
+
+function buildModel(){
+  const TH=SYS()==="thread",TB=TH?S.tbl.thread:S.tbl.weld,nv=(t,c,s)=>num(t[c]&&t[c][s]);
+  // 寸法不明の直管は、描いた長さ（マス数）から長さを推定する
+  let kn=0,kg=0;const gl=r=>r.pieces.reduce((a,p)=>a+p.pts.length-1,0);
+  for(const r of G.runs)if(r.total!==null&&r.total>0){kn+=r.total;kg+=gl(r);}
+  const scale=kg?kn/kg:400;
+  const len=r=>{if(r.total!==null&&r.total>0)return {L:r.total,unk:false};return {L:Math.max(50,Math.round(gl(r)*scale/10)*10),unk:true};};
+  // 継手の位置（3次元）：直管の向きと長さを順にたどる
+  const P3={},runInfo=new Map();
+  const stepOf=(r,from)=>{const p=r.pieces.find(q=>q.a===from||q.b===from);const pts=p.a===from?p.pts:[...p.pts].reverse();
+    const a=PK(pts[0]),b=PK(pts[1]);return STEP3[(b[0]-a[0])+","+(b[1]-a[1])]||V3(1,0,0);};
+  for(const r of G.runs){const l=len(r);runInfo.set(r,l);}
+  const adjR=new Map();for(const r of G.runs){for(const k of [r.a,r.b]){if(!adjR.has(k))adjR.set(k,[]);adjR.get(k).push(r);}}
+  for(const r0 of G.runs){
+    if(P3[r0.a]!==undefined||P3[r0.b]!==undefined)continue;
+    P3[r0.a]=V3(0,0,0);const q=[r0.a];
+    while(q.length){const u=q.shift();for(const r of adjR.get(u)||[]){const v=r.a===u?r.b:r.a;if(P3[v]!==undefined)continue;
+      P3[v]=vadd(P3[u],vmul(stepOf(r,u),runInfo.get(r).L));q.push(v);}}
+  }
+  const els=[],dims=[];
+  const fitCE=(nd)=>{const mx=String(Math.max(...nd.pieces.map(q=>+psz(q))));
+    if(TH)return {R:nv(TB,nd.type==="tee"?"T":"L",mx)||30,mx};
+    const short=nd.type==="elbow"&&(S.iso.opt[nd.k]||{}).short;return {R:nv(TB,nd.type==="tee"?"T":(short?"SR":"LR"),mx)||38,mx};};
+  const kae=s=>nv(TB,"F",s)||5,pk=packV();
+  for(const r of G.runs){
+    const o=r.o,A0=P3[o.from],B0=P3[o.to];if(!A0||!B0)continue;
+    const {L,unk}=runInfo.get(r);if(L<=0)continue;
+    const dir=vmul(vadd(B0,vmul(A0,-1)),1/L),at3=s=>vadd(A0,vmul(dir,s));
+    const sz0=psz(o.pieces[0]),szs=[...new Set(o.pieces.map(psz))];
+    dims.push({a:A0,b:B0,dir,text:unk?`寸法不明 約${L}`:`${szs.map(x=>x+"A").join("→")} ${r1(L)}`,unk,run:true});
+    // 部品の位置（不明なら描いた位置から割り出す）
+    const latIdx=k=>{let n=0;for(const p of o.pieces){const pts=p.pts[0]===(o.pieces.indexOf(p)===0?o.from:null)?p.pts:p.pts;}return 0;};
+    const tot=gl(r);let acc=0;const latPos={};
+    for(let i=0;i<o.pieces.length;i++){acc+=o.pieces[i].pts.length-1;if(i<o.parts.length)latPos[o.parts[i]]=acc/tot*L;}
+    const parts=o.parts.map((k,i)=>{const pt=S.iso.parts[k],span=pt.t==="reducer"?0:pt.t==="fpair"?pk:(num(pt.len)||150);
+      let s=r.pos[i];if(s===null||s===undefined)s=latPos[k]-span/2;return {k,pt,s,e:s+span,span,i};});
+    // 端の扱い
+    const endInfo=(node,atStart)=>{const nd=G.nodes.get(node),p=atStart?o.pieces[0]:o.pieces[o.pieces.length-1],sz=psz(p);
+      const sgn=atStart?1:-1,base=atStart?0:L,S0=x=>base+sgn*x;
+      switch(nd.type){
+        case "open":return S0(0);
+        case "flange":{els.push({t:"flange",c:at3(S0(0)),ax:vmul(dir,sgn),th:FL_T[sz]||14,od:FL_OD[sz]||120});return S0(kae(sz));}
+        case "elbow":case "tee":return S0(fitCE(nd).R);
+        case "pend":{const pt=S.iso.parts[node],span=num(pt.len)||150,scr=pt.conn==="screw";
+          els.push({t:pt.t,a:at3(S0(0)),b:at3(S0(span)),od:SGP_OD[sz],span,label:"面間 "+(num(pt.len)===null?"?":r1(span))});
+          if(scr)return S0(span);
+          const tf=FL_T[sz]||14,g=pt.noPack?0:pk;
+          els.push({t:"flange",c:at3(S0(span)),ax:vmul(dir,-sgn),th:tf,od:FL_OD[sz]||120});        // 部品側フランジ
+          els.push({t:"flange",c:at3(S0(span+g)),ax:vmul(dir,sgn),th:tf,od:FL_OD[sz]||120});      // 配管側フランジ
+          return S0(span+g+kae(sz));}
+        default:return S0(0);
+      }};
+    let cur=endInfo(o.from,true);const last=endInfo(o.to,false);
+    o.pieces.forEach((p,i)=>{
+      const sz=psz(p),od=SGP_OD[sz]||30;
+      let end;
+      if(i<o.parts.length){const P=parts[i],pt=P.pt,tf=FL_T[sz]||14,fod=FL_OD[sz]||120;
+        if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+psz(o.pieces[i+1]))))||50;end=P.s-R/2;}
+        else if(pt.t==="fpair"){end=P.s-kae(sz);}
+        else if(p.direct){end=P.s;}
+        else if(pt.conn==="screw"){end=P.s;}
+        else end=P.s-pk-kae(sz);
+      }else end=last;
+      if(!p.direct&&end>cur)els.push({t:"pipe",a:at3(cur),b:at3(end),od});
+      if(i<o.parts.length){const P=parts[i],pt=P.pt,sz2=psz(o.pieces[i+1]),tf=FL_T[sz]||14,fod=FL_OD[sz]||120;
+        if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+sz2)))||50;
+          els.push({t:"reducer",a:at3(P.s-R/2),b:at3(P.s+R/2),od1:od,od2:SGP_OD[sz2]||30});cur=P.s+R/2;}
+        else if(pt.t==="fpair"){els.push({t:"flange",c:at3(P.s),ax:vmul(dir,-1),th:tf,od:fod},{t:"flange",c:at3(P.s+pk),ax:dir,th:tf,od:fod});cur=P.s+pk+kae(sz2);}
+        else{
+          els.push({t:pt.t,a:at3(P.s),b:at3(P.e),od,span:P.span,label:"面間 "+(num(pt.len)===null?"?":r1(P.span))});
+          const flg=pt.conn!=="screw";
+          if(flg){els.push({t:"flange",c:at3(P.s),ax:dir,th:tf,od:fod},{t:"flange",c:at3(P.e),ax:vmul(dir,-1),th:tf,od:fod});}
+          if(flg&&!p.direct)els.push({t:"flange",c:at3(P.s-pk),ax:vmul(dir,-1),th:tf,od:fod});
+          const nextDirect=o.pieces[i+1]&&o.pieces[i+1].direct;
+          if(flg&&!nextDirect)els.push({t:"flange",c:at3(P.e+pk),ax:dir,th:tf,od:fod});
+          cur=nextDirect?P.e+pk:(flg?P.e+pk+kae(sz2):P.e);
+        }}
+    });
+    // 配管ごとの寸法（アイソメ用）
+    o.pieces.forEach((p,i)=>{if(p.direct)return;const rc=pieceCalc(p);
+      const a=i===0?0:(parts[i-1].e),b=i===o.pieces.length-1?L:parts[i].s;
+      dims.push({a:at3(a),b:at3(b),dir,piece:true,text:p.len===null||unk?`${psz(p)}A 寸法不明 約${Math.round((b-a)/10)*10}`:`${psz(p)}A / ${r1(p.len)}`,unk:p.len===null||unk});});
+  }
+  // 継手（エルボ・チーズ）
+  for(const nd of G.nodes.values()){
+    if(nd.type!=="elbow"&&nd.type!=="tee")continue;const c=P3[nd.k];if(!c)continue;
+    const {R,mx}=fitCE(nd),legs=(adjR.get(nd.k)||[]).map(r=>stepOf(r,nd.k));
+    els.push({t:nd.type,c,legs,R,od:SGP_OD[mx]||30,thread:TH});
+  }
+  return {els,dims,P3,unknown:dims.some(d=>d.unk)};
+}
+
+function makeDXF(){
+  renderIso();
+  const M=buildModel();if(!M.els.length)return null;
+  // 大きさから文字の高さを決める
+  let mn=V3(1e9,1e9,1e9),mxp=V3(-1e9,-1e9,-1e9);
+  for(const p of Object.values(M.P3)){mn=V3(Math.min(mn.x,p.x),Math.min(mn.y,p.y),Math.min(mn.z,p.z));mxp=V3(Math.max(mxp.x,p.x),Math.max(mxp.y,p.y),Math.max(mxp.z,p.z));}
+  const ext=Math.max(mxp.x-mn.x,mxp.y-mn.y,mxp.z-mn.z,500),TXH=clamp(Math.round(ext/70),20,90);
+  const views=[
+    {key:"top",name:"平面図（上）",ex:V3(1,0,0),ey:V3(0,1,0),vd:V3(0,0,1)},
+    {key:"front",name:"正面図",ex:V3(1,0,0),ey:V3(0,0,1),vd:V3(0,-1,0)},
+    {key:"right",name:"右側面図",ex:V3(0,1,0),ey:V3(0,0,1),vd:V3(1,0,0)},
+    {key:"back",name:"背面図",ex:V3(-1,0,0),ey:V3(0,0,1),vd:V3(0,1,0)},
+    {key:"left",name:"左側面図",ex:V3(0,-1,0),ey:V3(0,0,1),vd:V3(-1,0,0)}];
+  const ISO={key:"iso",name:"アイソメ図",ex:null};
+  const isoP=p=>({x:(p.x+p.y)*C3,y:(p.y-p.x)*0.5+p.z});
+  // 図形を各図の座標で作る
+  const draw=v=>{
+    const E=[],P=v.ex?(p=>({x:vdot(p,v.ex),y:vdot(p,v.ey)})):isoP;
+    const L=(ly,a,b)=>E.push({k:"L",ly,a,b}),C=(ly,c,r)=>E.push({k:"C",ly,c,r}),A=(ly,c,r,a1,a2)=>E.push({k:"A",ly,c,r,a1,a2}),T=(ly,p,s,h,rot)=>E.push({k:"T",ly,p,s,h:h||TXH,rot:rot||0});
+    const along=d=>v.ex&&Math.abs(vdot(d,v.vd))>0.9;
+    const u2=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l};};
+    const off=(p,n,h)=>({x:p.x+n.x*h,y:p.y+n.y*h});
+    let pc=0;
+    const rect=(ly,a,b,h)=>{const u=u2(a,b),n={x:-u.y,y:u.x};const p1=off(a,n,h),p2=off(b,n,h),p3=off(b,n,-h),p4=off(a,n,-h);L(ly,p1,p2);L(ly,p2,p3);L(ly,p3,p4);L(ly,p4,p1);};
+    for(const e of M.els){
+      if(e.t==="pipe"){const d=vmul(vadd(e.b,vmul(e.a,-1)),1);const ln3=Math.hypot(d.x,d.y,d.z)||1,du=vmul(d,1/ln3);
+        if(!v.ex)continue; // アイソメは下で芯から芯まで通して描く
+        if(along(du)){const c=P(e.a);C("PIPE",c,e.od/2);L("CENTER",{x:c.x-e.od*0.7,y:c.y},{x:c.x+e.od*0.7,y:c.y});L("CENTER",{x:c.x,y:c.y-e.od*0.7},{x:c.x,y:c.y+e.od*0.7});continue;}
+        const a=P(e.a),b=P(e.b),u=u2(a,b),n={x:-u.y,y:u.x};
+        L("PIPE",off(a,n,e.od/2),off(b,n,e.od/2));L("PIPE",off(a,n,-e.od/2),off(b,n,-e.od/2));
+        if(Math.hypot(b.x-a.x,b.y-a.y)>0.5){L("PIPE",off(a,n,e.od/2),off(a,n,-e.od/2));L("PIPE",off(b,n,e.od/2),off(b,n,-e.od/2));}
+      }else if(e.t==="flange"){
+        if(!v.ex){const c=P(e.c),u=u2(P(e.c),P(vadd(e.c,e.ax))),n={x:-u.y,y:u.x};L("FIT",off(c,n,TXH*0.6),off(c,n,-TXH*0.6));continue;}
+        if(along(e.ax)){C("FIT",P(e.c),e.od/2);continue;}
+        rect("FIT",P(e.c),P(vadd(e.c,vmul(e.ax,e.th))),e.od/2);
+      }else if(e.t==="valve"||e.t==="flex"){
+        const a=P(e.a),b=P(e.b),u=u2(a,b),n={x:-u.y,y:u.x},m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+        const ax=vmul(vadd(e.b,vmul(e.a,-1)),1/(e.span||1));
+        if(v.ex&&along(ax)){C("PART",m,e.od*1.1);T("DIM",{x:m.x+e.od*1.4,y:m.y},e.label);continue;}
+        const h=v.ex?Math.max(e.od*1.1,e.span*0.22):TXH*0.7;
+        if(e.t==="valve"){L("PART",off(a,n,h),off(b,n,-h));L("PART",off(a,n,-h),off(b,n,h));L("PART",off(a,n,h),off(a,n,-h));L("PART",off(b,n,h),off(b,n,-h));L("PART",m,off(m,n,h*1.4));}
+        else{rect("PART",a,b,h*0.6);const zz=4;let prev=null;for(let z=0;z<=zz;z++){const t=0.15+0.7*z/zz,p=off({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t},n,(z%2?1:-1)*h*0.32);if(prev)L("PART",prev,p);prev=p;}} // フレキ：箱＋ゆるい波線
+        const sd=(pc++%2)?-1:1,tp=off(m,n,sd*(h+TXH*(sd>0?1.3:2.2)));T("DIM",{x:tp.x-TXH*2,y:tp.y},e.label); // 並んだ部品は文字を交互に上下へ
+      }else if(e.t==="reducer"){
+        const a=P(e.a),b=P(e.b);
+        if(!v.ex||Math.hypot(b.x-a.x,b.y-a.y)<0.5){if(v.ex){C("FIT",a,e.od1/2);C("FIT",a,e.od2/2);}continue;}
+        const u=u2(a,b),n={x:-u.y,y:u.x};L("FIT",off(a,n,e.od1/2),off(b,n,e.od2/2));L("FIT",off(a,n,-e.od1/2),off(b,n,-e.od2/2));L("FIT",off(a,n,e.od1/2),off(a,n,-e.od1/2));L("FIT",off(b,n,e.od2/2),off(b,n,-e.od2/2));
+      }else if(e.t==="elbow"||e.t==="tee"){
+        if(!v.ex){ // アイソメ：継手の両端（芯から芯先寸法の位置）に横線
+          for(const d of e.legs){const q=P(vadd(e.c,vmul(d,e.R))),c0=P(e.c),u=u2(c0,q),n={x:-u.y,y:u.x};L("FIT",off(q,n,TXH*0.6),off(q,n,-TXH*0.6));}
+          continue;}
+        const inP=e.legs.filter(d=>!along(d)),c=P(e.c);
+        if(e.t==="elbow"&&inP.length===2&&!e.thread){ // 溶接エルボ：外形は円弧
+          const [d1,d2]=inP,cc=P(vadd(e.c,vmul(vadd(d1,d2),e.R))),s1=P(vadd(e.c,vmul(d1,e.R))),s2=P(vadd(e.c,vmul(d2,e.R)));
+          let a1=Math.atan2(s1.y-cc.y,s1.x-cc.x)*180/Math.PI,a2=Math.atan2(s2.y-cc.y,s2.x-cc.x)*180/Math.PI;
+          if(((a2-a1)%360+360)%360>180){const t=a1;a1=a2;a2=t;}
+          A("CENTER",cc,e.R,a1,a2);A("FIT",cc,e.R+e.od/2,a1,a2);if(e.R>e.od/2)A("FIT",cc,e.R-e.od/2,a1,a2);
+        }else{ // ねじ込み継手・チーズ：脚ごとの外形
+          const w=e.thread?e.od*0.75:e.od/2; // 溶接継手（突合せ）は直管と同じ太さ
+          for(const d of inP)rect("FIT",c,P(vadd(e.c,vmul(d,e.R))),w);
+          if(inP.length<e.legs.length)C("FIT",c,w);
+        }
+      }
+    }
+    if(!v.ex){for(const r of G.runs){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(a3&&b3)L("PIPE",P(a3),P(b3));}}
+    // 中心線（一点鎖線）
+    if(v.ex){for(const r of G.runs){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(!a3||!b3)continue;const d=vadd(b3,vmul(a3,-1)),l=Math.hypot(d.x,d.y,d.z);if(l<1||along(vmul(d,1/l)))continue;
+      const a=P(a3),b=P(b3),u=u2(a,b),x=Math.min(30,TXH);L("CENTER",off(a,u,-x),off(b,u,x));}}
+    // 寸法の文字
+    for(const d of M.dims){
+      if(v.ex&&!d.run)continue;if(!v.ex&&d.run&&M.dims.some(q=>q.piece&&q.a===d.a))continue;
+      if(v.ex&&along(d.dir))continue;
+      const a=P(d.a),b=P(d.b),m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},u=u2(a,b);let n={x:-u.y,y:u.x};if(n.y<0||(Math.abs(n.y)<1e-6&&n.x<0))n={x:-n.x,y:-n.y};
+      const dist=v.ex?Math.max(TXH*1.6,80):TXH*1.2,p=off(m,n,dist);
+      let rot=Math.atan2(u.y,u.x)*180/Math.PI;if(rot>90)rot-=180;if(rot<-90)rot+=180;
+      T(d.unk?"UNKNOWN":"DIM",p,d.text,TXH,Math.abs(rot)>80?90:rot);
+    }
+    return E;
+  };
+  const bbox=E=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const add=(x,y)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);};
+    for(const e of E){if(e.k==="L"){add(e.a.x,e.a.y);add(e.b.x,e.b.y);}else if(e.k==="C"||e.k==="A"){add(e.c.x-e.r,e.c.y-e.r);add(e.c.x+e.r,e.c.y+e.r);}else if(e.k==="T"){add(e.p.x,e.p.y);add(e.p.x+e.s.length*e.h*0.9,e.p.y+e.h);}}
+    return x0>x1?{x0:0,y0:0,x1:1,y1:1}:{x0,y0,x1,y1};};
+  const out={};for(const v of [...views,ISO]){const E=draw(v);out[v.key]={v,E,b:bbox(E)};}
+  // 配置（第三角法）：上に平面図、下段に 左・正面・右・背面、右上にアイソメ図
+  const gap=Math.max(ext*0.25,TXH*6),place={};
+  const f=out.front.b;place.front={dx:0,dy:0};
+  place.top={dx:0,dy:f.y1+gap-out.top.b.y0};
+  place.left={dx:f.x0-gap-out.left.b.x1,dy:0};
+  place.right={dx:f.x1+gap-out.right.b.x0,dy:0};
+  const rb=out.right.b;place.back={dx:rb.x1+place.right.dx+gap-out.back.b.x0,dy:0};
+  place.iso={dx:rb.x0+place.right.dx-out.iso.b.x0,dy:f.y1+gap-out.iso.b.y0};
+  // DXF（R12）を書く
+  const n3=v=>(Math.round(v*1000)/1000).toString();
+  const lines=[];const w=(...a)=>{for(let i=0;i<a.length;i+=2)lines.push(String(a[i]),String(a[i+1]));};
+  w(0,"SECTION",2,"HEADER",9,"$ACADVER",1,"AC1009",9,"$DWGCODEPAGE",3,"ANSI_932",9,"$INSUNITS",70,4,9,"$LTSCALE",40,Math.max(1,Math.round(TXH/12)),0,"ENDSEC");
+  w(0,"SECTION",2,"TABLES",0,"TABLE",2,"LTYPE",70,2,
+    0,"LTYPE",2,"CONTINUOUS",70,0,3,"Solid line",72,65,73,0,40,"0.0",
+    0,"LTYPE",2,"CENTER",70,0,3,"Center ____ _ ____",72,65,73,4,40,"40.0",49,"25.0",49,"-5.0",49,"5.0",49,"-5.0",0,"ENDTAB");
+  const LAY=[["PIPE",7,"CONTINUOUS"],["CENTER",1,"CENTER"],["FIT",3,"CONTINUOUS"],["PART",6,"CONTINUOUS"],["DIM",5,"CONTINUOUS"],["UNKNOWN",30,"CONTINUOUS"],["NOTE",8,"CONTINUOUS"]];
+  w(0,"TABLE",2,"LAYER",70,LAY.length);for(const [n,c,lt] of LAY)w(0,"LAYER",2,n,70,0,62,c,6,lt);w(0,"ENDTAB");
+  w(0,"TABLE",2,"STYLE",70,1,0,"STYLE",2,"STANDARD",70,0,40,"0.0",41,"1.0",50,"0.0",71,0,42,"2.5",3,"txt",4,"extfont2",0,"ENDTAB",0,"ENDSEC");
+  w(0,"SECTION",2,"ENTITIES");
+  for(const key in out){const {v,E}=out[key],pl=place[key],X=x=>n3(x+pl.dx),Y=y=>n3(y+pl.dy);
+    for(const e of E){
+      if(e.k==="L")w(0,"LINE",8,e.ly,10,X(e.a.x),20,Y(e.a.y),30,0,11,X(e.b.x),21,Y(e.b.y),31,0);
+      else if(e.k==="C")w(0,"CIRCLE",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r));
+      else if(e.k==="A")w(0,"ARC",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r),50,n3(e.a1),51,n3(e.a2));
+      else if(e.k==="T")w(0,"TEXT",8,e.ly,10,X(e.p.x),20,Y(e.p.y),30,0,40,n3(e.h),1,dxfTxt(e.s),50,n3(e.rot));
+    }
+    const b=out[key].b;w(0,"TEXT",8,"NOTE",10,n3(b.x0+pl.dx),20,n3(b.y0+pl.dy-TXH*3),30,0,40,n3(TXH*1.5),1,dxfTxt(v.name),50,0);
+  }
+  const fb=out.front.b,ny=fb.y0-TXH*8;
+  const notes=[`SGP 配管図（${SYS()==="thread"?"白管・ねじ込み":"黒管・溶接"}）　${today().s}${S.iso.meta&&S.iso.meta.at?"　最終更新 "+metaText(S.iso.meta):""}`,
+    "単位：mm　中心線：一点鎖線　配管・フランジ・エルボ外形：実寸（SGP外径、JIS 10Kフランジの目安寸法）",
+    "バルブ・フレキは記号表示（面間は入力値）。フランジ間のすき間はパッキン厚。",
+    M.unknown?"「寸法不明 約○○」は寸法が未入力のため、アイソメ図で描いた長さから推定した値です。":"",
+    `${COPY}　計算値・作図は目安です。施工前に必ず現物・メーカー資料で確認してください。`].filter(Boolean);
+  notes.forEach((t,i)=>w(0,"TEXT",8,"NOTE",10,n3(fb.x0+place.left.dx+out.left.b.x0-place.left.dx),20,n3(ny-i*TXH*1.8),30,0,40,n3(TXH),1,dxfTxt(t),50,0));
+  w(0,"ENDSEC",0,"EOF");
+  return toSJIS(lines.join("\r\n")+"\r\n");
+}
+document.getElementById("exDxf").onclick=async()=>{
+  let d;try{d=makeDXF();}catch(e){console.error(e);return toast("DXFを作れませんでした："+(e&&e.message||e));}
+  if(!d)return toast("図面がまだありません");
+  await saveFile(`sgp-${SYS()==="thread"?"white":"black"}-${today().f}.dxf`,new Blob([d],{type:"application/dxf"}),()=>showPreview(`<p class="note">この環境ではファイルを保存できません。GitHub版のページから書き出してください。</p>`));
+};
 
 applyMode();
 </script>
