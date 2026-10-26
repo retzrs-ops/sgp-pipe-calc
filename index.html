@@ -374,7 +374,7 @@ body.kp-open .wrap{padding-bottom:260px}
       <label for="pack" style="margin:0;font-size:.9rem;color:var(--ink)">フランジパッキン厚（共通）</label>
       <input id="pack" class="kp" type="text" inputmode="none" autocomplete="off" aria-label="フランジパッキン厚（共通）"> <span>mm</span>
     </div>
-    <p class="note" id="packNote">アイソメ図で、バルブ・フレキのフランジ接続部と「フランジ2枚」の間に入るパッキンの厚さです。その分をカット長から差し引きます。</p>
+    <p class="note" id="packNote">アイソメ図で、バルブ・フレキのフランジ接続部、端フランジ、「フランジ2枚」の間に入るパッキンの厚さです。その分をカット長から差し引きます。</p>
     <div class="tbl-wrap"><table id="tbl"></table></div>
     <p class="note" id="tblNote"></p>
     <button class="mini" id="resetTbl">寸法を初期値に戻す</button>
@@ -839,7 +839,7 @@ function endDed(k,p,acc){
   const screwIn=()=>{const v=num(S.tbl.thread.N[sz]);if(v===null)throw `${sz}A のねじ込み長さが未設定です（ねじ込みモードの設定欄）`;return add("ねじ込み",-v);};
   switch(nd.type){
     case "open":return 0;
-    case "flange":return add("控え",need("F",sz,"フランジ控え"));
+    case "flange":return add("控え",need("F",sz,"フランジ控え"))+add("パッキン",packV()); // 端フランジ：相手との間にパッキンが入る
     case "valve":case "flex":case "fpair":case "pend":{
       if(nd.type!=="fpair"&&(S.iso.parts[k].conn||"flange")==="screw")return screwIn(); // ネジ接続：管がねじ込まれる分だけ長くなる
       const f=add("控え",need("F",sz,"フランジ控え"));
@@ -1042,7 +1042,9 @@ function renderIso(){
     if(selPart===nd.k)marks.push(dot(c,16,"m-sel"));
     switch(nd.type){
       case "open":marks.push(dot(c,3,"m-open"));break;
-      case "flange":marks.push(flTick(c,d,0),flTick(c,d,4));break;
+      case "flange":{marks.push(flTick(c,d,0),flTick(c,d,4));
+        if(packV()){const f={x:c.x-d.x*2.2,y:c.y-d.y*2.2};marks.push(poly([at(f,d,-1.6,-7),at(f,d,1.6,-7),at(f,d,1.6,7),at(f,d,-1.6,7)],"m-pack"));}
+        break;}
       case "elbow":case "tee":{
         const mxs=Math.max(...ps.map(q=>+psz(q)));
         for(const q of ps)if(+psz(q)<mxs){const dq=unitDir(nd.k,q);marks.push(redShape({x:c.x+dq.x*16,y:c.y+dq.y*16},{x:-dq.x,y:-dq.y}));}
