@@ -261,6 +261,8 @@ div.sumbar button{padding:4px 10px}
 .fbox{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 82px);max-height:45%;overflow:auto;z-index:2;background:var(--surface);
   border:1px solid var(--line);border-left:4px solid var(--red);border-radius:6px;padding:4px 8px;font-size:12px;line-height:1.55;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .fbox[hidden]{display:none}
+.fbox.collapsed{background:none;border:0;box-shadow:none;padding:0;max-height:none;overflow:visible;max-width:none}
+.fbtn{font:inherit;font-weight:800;font-size:13px;padding:5px 12px;border:1px solid var(--blue);border-radius:999px;background:var(--surface);color:var(--blue);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .fbox .fh{font-weight:800;font-size:12px;color:var(--sub)}
 .fbox .err{color:var(--red);font-weight:700}
 .fbox .ind{padding-left:1.2em}
@@ -503,7 +505,7 @@ body.kp-open .wrap{padding-bottom:340px}
   </details>
   <footer class="appfoot">
     <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
-    <p class="copy">SGP 切断長計算 v1.2.0　© 2026 retzrs-ops. All rights reserved.</p>
+    <p class="copy">SGP 切断長計算 v1.2.1　© 2026 retzrs-ops. All rights reserved.</p>
   </footer>
 </div>
 
@@ -1663,10 +1665,13 @@ function fmtDed(arr){arr=arr||[];if(!arr.length)return "";
   if(!pos.length)return neg.map(x=>" ＋ "+x[0]+r1(-x[1])).join(""); // ネジ接続の部品：長く切る分
   const inner=pos.map(x=>x[0]+r1(x[1])).join("＋")+neg.map(x=>" − "+x[0]+r1(-x[1])).join(""); // 例：(エルボ32 − ねじ込み13)
   return " − "+(arr.length>1?"(":"")+inner+(arr.length>1?")":"");}
+let fboxOpen=false; // 計算式は「計算確認」ボタンで展開し、枠を押すとボタンに戻す
 function renderFbox(){
   const run=isIso()&&sel?G.rmap.get(sel.key):null;
   if(!run){fbox.hidden=true;return;}
-  const o=run.o,many=o.pieces.length>1;let h=`<div class="fh">計算式（カット長）</div>`;
+  if(!fboxOpen){fbox.classList.add("collapsed");fbox.innerHTML=`<button type="button" class="fbtn">計算確認</button>`;fbox.hidden=false;positionFbox();return;}
+  fbox.classList.remove("collapsed");
+  const o=run.o,many=o.pieces.length>1;let h=`<div class="fh">計算式（カット長）<span style="float:right;color:var(--blue)">▲ 枠を押すと閉じます</span></div>`;
   if(run.diag)h+=`<div class="fl"><b>45°・起点から${run.dirTxt}</b>${run.offset!==null&&run.offset!==undefined?`　斜めの芯々 T ＝ ズレ${r1(run.offset)} × √2 ＝ <span class="c-blue">${r1(run.total)}</span>`:""}</div>`;
   o.pieces.forEach((p,i)=>{
     const nm=many?"配管"+CIR[i]:"配管";
@@ -1688,6 +1693,7 @@ function positionFbox(){
   const visB=Math.min(box.bottom,window.innerHeight-kpH);
   fbox.style.bottom=Math.max(8,box.bottom-visB+8)+"px";
 }
+fbox.addEventListener("click",()=>{fboxOpen=!fboxOpen;renderFbox();}); // 計算確認ボタン／計算式の枠を押して開閉
 window.addEventListener("scroll",()=>positionFbox(),{passive:true});
 window.addEventListener("resize",()=>positionFbox());
 
