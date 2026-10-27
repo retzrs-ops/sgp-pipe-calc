@@ -31,7 +31,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI","Meiryo",system-ui,sans-serif;
   font-size:16px;line-height:1.6;font-variant-numeric:tabular-nums}
 .wrap{max-width:640px;margin:0 auto;padding:12px 14px 120px}
-.modes{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--steel);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.modes{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid var(--steel);border-radius:8px;overflow:hidden;margin-bottom:12px}
 .modes button{border:0;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:1rem;padding:12px 6px;cursor:pointer;line-height:1.3}
 .modes button small{display:block;font-weight:400;font-size:.75rem;color:var(--sub)}
 .modes button[aria-pressed="true"]{background:var(--steel);color:var(--surface)}
@@ -89,7 +89,8 @@ body.kp-open .wrap{padding-bottom:340px}
 .kp-keys .next{grid-row:span 2;background:var(--steel);color:var(--surface);font-size:1.05rem;border-color:var(--steel)}
 input.kp-active{outline:3px solid var(--mark);outline-offset:1px}
 @media (prefers-reduced-motion:reduce){.kp-pad{transition:none}}
-body[data-mode^="iso"] #segs,body[data-mode^="iso"] #add,body[data-mode^="iso"] .sumbar{display:none}
+body[data-mode^="iso"] #segs,body[data-mode^="iso"] #add,body[data-mode^="iso"] .sumbar,body[data-mode="off45"] #segs,body[data-mode="off45"] #add,body[data-mode="off45"] .sumbar{display:none}
+body:not([data-mode="off45"]) #off45{display:none}
 body:not([data-mode^="iso"]) #iso{display:none}
 body[data-mode^="iso"] .wrap{padding-bottom:40px}
 .tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px}
@@ -318,6 +319,26 @@ body.kp-open .wrap{padding-bottom:260px}
 .appfoot .disc{font-size:12px;line-height:1.7;margin:0 0 8px}
 .appfoot .copy{font-size:12px;margin:0;text-align:center}
 body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
+.sumtbl .sumrow td{font-weight:800;border-top:2px solid var(--line)}
+.otog{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.otog button{border:0;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:700;min-height:36px;cursor:pointer}
+.otog button[aria-pressed="true"]{background:var(--steel);color:var(--surface)}
+#off45 .grid{margin-bottom:8px}
+.odiag{display:block;width:100%;max-width:420px;margin:4px auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.odiag .op{stroke:var(--pipe);stroke-width:6;stroke-linecap:round}
+.odiag .oe{fill:var(--mark);stroke:var(--pipe);stroke-width:1.5}
+.odiag .od{stroke:var(--blue);stroke-width:1.2;stroke-dasharray:4 3}
+.odiag .odx{stroke:var(--sub);stroke-width:1;stroke-dasharray:2 3}
+.odiag .ot{fill:var(--blue);font-size:13px;font-weight:800}
+.odiag .oc{fill:var(--red)}
+.odiag .osm{fill:var(--sub);font-size:10px}
+.ores{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.ores div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.ores span{display:block;font-size:12px;color:var(--sub)}
+.ores b{font-size:22px}
+.fbox2{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:6px;padding:6px 10px;font-size:14px;line-height:1.7}
+.fbox2 .fh{font-size:12px;font-weight:800;color:var(--sub)}
+@media (max-width:420px){.modes{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body data-mode="weld">
@@ -327,6 +348,7 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
     <button type="button" data-mode="thread">ねじ込み<small>SGP 白管</small></button>
     <button type="button" data-mode="iso">アイソメ<small>黒管・溶接</small></button>
     <button type="button" data-mode="isoT">アイソメ<small>白管・ネジ</small></button>
+    <button type="button" data-mode="off45">45°芯ズレ<small>エルボ2個</small></button>
   </div>
   <header>
     <div class="hrow"><h1>SGP 切断長計算</h1><button type="button" class="sharetop" id="shareBtn2">📤 共有</button></div>
@@ -368,6 +390,26 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
       <button type="button" id="shareBtn">📤 共有</button>
     </div>
     <div id="isoSum"></div>
+  </section>
+
+  <section id="off45">
+    <div class="otog" role="group" aria-label="配管方式"><button type="button" data-osys="weld">黒管・溶接</button><button type="button" data-osys="thread">白管・ネジ</button></div>
+    <div class="otog" role="group" aria-label="計算の向き"><button type="button" data-odir="x2y">芯々ズレ → 単管</button><button type="button" data-odir="y2x">単管 → 芯々ズレ</button></div>
+    <div class="grid">
+      <div><label for="offSize">口径</label><select id="offSize"></select></div>
+      <div><label id="offLabel" for="offVal">芯々のズレ X（mm）</label><input id="offVal" class="kp" type="text" inputmode="none" autocomplete="off" placeholder="0"></div>
+    </div>
+    <svg class="odiag" viewBox="0 0 320 150" aria-hidden="true">
+      <line x1="10" y1="115" x2="110" y2="115" class="op"/><line x1="110" y1="115" x2="190" y2="35" class="op"/><line x1="190" y1="35" x2="310" y2="35" class="op"/>
+      <circle cx="110" cy="115" r="5" class="oe"/><circle cx="190" cy="35" r="5" class="oe"/>
+      <line x1="250" y1="35" x2="250" y2="115" class="od"/><line x1="190" y1="115" x2="260" y2="115" class="odx"/>
+      <text x="256" y="80" class="ot">X <tspan id="oX">X</tspan></text>
+      <text x="118" y="68" class="ot" transform="rotate(-45 150 75)">T <tspan id="oT">T</tspan></text>
+      <text x="168" y="98" class="ot oc" transform="rotate(-45 150 75)">Y <tspan id="oC">Y</tspan></text>
+      <text x="72" y="140" class="osm">45°エルボ</text><text x="196" y="24" class="osm">45°エルボ</text>
+    </svg>
+    <div id="offOut"></div>
+    <p class="note">X＝平行な2本の配管の芯どうしのズレ、T＝2つのエルボの芯から芯までの斜めの長さ、Y＝真ん中の単管のカット長です。黒管は45°ロングエルボ（JIS B 2311）、白管は45°エルボ（JIS B 2301）とねじ込み長さで計算します。継手寸法は設定欄で変更できます。</p>
   </section>
 
   <div id="segs"></div>
@@ -456,13 +498,14 @@ const MODES={
     lead:"芯寸法から継手の芯先寸法（フランジは控え寸法）を引いて、管の切断長を出します。",
     setTitle:"継手寸法・ギャップの設定（溶接）",
     fits:{LR:"エルボ ノーマル",SR:"エルボ ショート",T:"チーズ",F:"フランジ(SOP)"},
-    cols:{LR:"エルボ ノーマル",SR:"エルボ ショート",T:"チーズ",F:"フランジ控え",R:"レジューサ長"},
+    cols:{LR:"エルボ ノーマル",SR:"エルボ ショート",L45:"45°エルボ",T:"チーズ",F:"フランジ控え",R:"レジューサ長"},
     def:{
       LR:{"15":38.1,"20":38.1,"25":38.1,"32":47.6,"40":57.2,"50":76.2,"65":95.3,"80":114.3},
       SR:{"15":null,"20":null,"25":25.4,"32":31.8,"40":38.1,"50":50.8,"65":63.5,"80":76.2},
       T: {"15":25.4,"20":28.6,"25":38.1,"32":47.6,"40":57.2,"50":63.5,"65":76.2,"80":85.7},
       F: {"15":5,"20":5,"25":5,"32":6,"40":6,"50":6,"65":7,"80":7},
-      R: {"15":null,"20":38.1,"25":50.8,"32":50.8,"40":63.5,"50":76.2,"65":88.9,"80":88.9}
+      R: {"15":null,"20":38.1,"25":50.8,"32":50.8,"40":63.5,"50":76.2,"65":88.9,"80":88.9},
+      L45:{"15":15.8,"20":19.0,"25":22.2,"32":25.4,"40":28.6,"50":34.9,"65":44.5,"80":50.8}
     },
     note:"エルボ・チーズの初期値は JIS B 2311 鋼製突合せ溶接式継手の芯先寸法（mm）。15A・20A のショートエルボは規格外のため空欄です。フランジ(SOP)は面からの控え寸法で、初期値は目安です。社内基準や施工要領の値に合わせてください。フランジにはギャップを引きません。レジューサ長（同心レジューサ JIS B 2311、大径側の口径の行）はアイソメ図モードで使います。入力した値はこのブラウザに保存されます。"
   },
@@ -507,6 +550,7 @@ function fromSaved(s){
     if(!n.iso.runs)n.iso.runs={};
     if(s.lastToken)n.lastToken=s.lastToken;
     if(s.userName)n.userName=s.userName;
+    if(s.off)n.off=s.off;
     if(Array.isArray(s.segs))n.segs.weld=s.segs;
     else if(s.segs){n.segs.weld=s.segs.weld;n.segs.thread=s.segs.thread;}
   }
@@ -527,7 +571,7 @@ const r1=n=>Math.round(n*10)/10;
 const segs=()=>S.segs[S.mode];
 const isIso=()=>S.mode==="iso"||S.mode==="isoT";
 const SYS=()=>S.mode==="isoT"?"thread":"weld"; // アイソメの配管方式
-const TM=()=>S.mode==="iso"?"weld":S.mode==="isoT"?"thread":S.mode;
+const TM=()=>S.mode==="iso"?"weld":S.mode==="isoT"?"thread":S.mode==="off45"?((S.off&&S.off.sys)||"weld"):S.mode;
 const freshIso=()=>({edges:[],parts:{},opt:{},pieces:{},runs:{},size:"20",view:null,showCut:false});
 const num=v=>(v===null||v===""||v===undefined||isNaN(parseFloat(v)))?null:parseFloat(v);
 
@@ -604,6 +648,7 @@ function render(){
 
 function update(){
   if(isIso())return renderIso();
+  if(S.mode==="off45")return renderOff();
   let sum=0;
   document.querySelectorAll(".seg").forEach((el,i)=>{
     const res=calc(segs()[i]);const out=el.querySelector(".result");
@@ -635,9 +680,9 @@ function renderTbl(){
 function applyMode(){
   document.body.dataset.mode=S.mode;
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
-  document.getElementById("lead").textContent=S.mode==="iso"?"グリッドをなぞって配管を描き、部品を置いて寸法を入れると、切断寸法を図に書き込みます（継手寸法は溶接の設定を使います）。":S.mode==="isoT"?"白管（ねじ込み）のアイソメ図です。継手の引き寸法（芯先寸法 − ねじ込み長さ）を引いて切断寸法を出します（継手寸法はねじ込みの設定を使います）。":MODES[S.mode].lead;
+  document.getElementById("lead").textContent=S.mode==="iso"?"グリッドをなぞって配管を描き、部品を置いて寸法を入れると、切断寸法を図に書き込みます（継手寸法は溶接の設定を使います）。":S.mode==="off45"?"45°エルボ2個で芯をずらすときの、真ん中の単管の長さ（または芯々のズレ）を計算します。":S.mode==="isoT"?"白管（ねじ込み）のアイソメ図です。継手の引き寸法（芯先寸法 − ねじ込み長さ）を引いて切断寸法を出します（継手寸法はねじ込みの設定を使います）。":MODES[S.mode].lead;
   renderTbl();
-  if(isIso())initIso();else render();
+  if(isIso())initIso();else if(S.mode==="off45")renderOff();else render();
 }
 /* モード切替：黒管アイソメ(S.iso)と白管アイソメ(S.isoT)は別の図面。白管の画面では S.iso に白管の図面を入れて使う */
 function setMode(m){
@@ -1195,6 +1240,26 @@ function layoutLabels(T,obs){
   }
 }
 
+/* 溶接箇所・ねじ込み箇所を口径ごとに数える（継手ごと：エルボ2・チーズ3・レジューサ2、SOPフランジは内外で2） */
+function jointCounts(){
+  const W={},N={},TH=SYS()==="thread",add=(m,sz,n)=>{m[sz]=(m[sz]||0)+n;},J=(sz,w,n)=>TH?add(N,sz,n):add(W,sz,w);
+  for(const nd of G.nodes.values()){
+    if(!nd.pieces.length)continue;
+    const szs=nd.pieces.map(q=>+psz(q)),mx=String(Math.max(...szs)),pt=S.iso.parts[nd.k];
+    switch(nd.type){
+      case "elbow":J(mx,2,2);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break; // 口径が変わる所はレジューサも数える
+      case "tee":J(mx,3,3);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break;
+      case "reducer":J(mx,2,2);break;
+      case "flange":J(psz(nd.pieces[0]),2,1);break;                 // 端フランジ
+      case "fpair":for(const q of nd.pieces)J(psz(q),2,1);break;      // フランジ2枚
+      case "valve":case "flex":case "pend":
+        for(const q of nd.pieces){if(q.direct)continue;const sz=psz(q);
+          if(pt&&pt.conn==="screw")add(N,sz,1);else J(sz,2,1);}      // 配管側のフランジ（ネジ接続はねじ込み）
+        break;
+    }
+  }
+  return {W,N};
+}
 function renderSum(){
   const box=document.getElementById("isoSum");
   if(!S.iso.showCut||!G.pieces.length){box.innerHTML="";return;}
@@ -1202,9 +1267,15 @@ function renderSum(){
   for(const p of G.pieces){const r=pieceCalc(p);if(r.direct)continue;
     if(r.error)errs.add(r.error);else if(r.empty)miss++;
     else{const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n++;tot[s].sum+=r.cut;}}
+  const {W,N}=jointCounts();
   let h=`<p class="legend">凡例：口径 / <span class="c-blue">全長</span> / <span class="c-red">カット長</span></p>`;
-  const ks=Object.keys(tot).sort((a,b)=>a-b);
-  if(ks.length)h+=`<table class="sumtbl"><tr><th>口径</th><th>本数</th><th>カット合計</th></tr>${ks.map(s=>`<tr><td>${s}A</td><td>${tot[s].n}本</td><td>${r1(tot[s].sum)} mm</td></tr>`).join("")}</table>`;
+  const ks=[...new Set([...Object.keys(tot),...Object.keys(W),...Object.keys(N)])].sort((a,b)=>a-b);
+  if(ks.length){
+    h+=`<table class="sumtbl"><tr><th>口径</th><th>本数</th><th>カット合計</th><th>溶接</th><th>ねじ込み</th></tr>`+
+      ks.map(s=>`<tr><td>${s}A</td><td>${tot[s]?tot[s].n+"本":"−"}</td><td>${tot[s]?r1(tot[s].sum)+" mm":"−"}</td><td>${W[s]||0}箇所</td><td>${N[s]||0}箇所</td></tr>`).join("")+
+      `</table>`+
+      `<p class="note">数え方：エルボ2・チーズ3・レジューサ2、SOPフランジは内外で2（フランジ2枚は4）。白管はねじ込み継手を同じ数で、ねじ込みフランジ・ネジ接続の部品は1箇所として数えます。</p>`;
+  }
   if(miss)h+=`<p class="err">寸法が足りない配管が ${miss} 本あります（寸法モードでタップして入力）</p>`;
   for(const e of errs)h+=`<p class="err">⚠ ${e}</p>`;
   box.innerHTML=h;
@@ -1671,7 +1742,8 @@ function buildExportSvg(){
   const body=["grid","pipes","marks","labels","labelsW"].map(id=>`<g>${document.getElementById(id).innerHTML}</g>`).join("");lw.innerHTML="";
   // 口径ごとの合計
   const tot={};for(const p of G.pieces){const r=pieceCalc(p);if(r.cut!==undefined){const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n++;tot[s].sum+=r.cut;}}
-  const lines=Object.keys(tot).sort((a,b)=>a-b).map(s=>`${s}A　${tot[s].n}本　カット合計 ${r1(tot[s].sum)} mm`);
+  const JC=jointCounts();
+  const lines=[...new Set([...Object.keys(tot),...Object.keys(JC.W),...Object.keys(JC.N)])].sort((a,b)=>a-b).map(s=>`${s}A　${tot[s]?tot[s].n:0}本　カット合計 ${tot[s]?r1(tot[s].sum):0} mm　溶接 ${JC.W[s]||0}箇所　ねじ込み ${JC.N[s]||0}箇所`);
   S.iso.showCut=prev;sel=prevSel;renderIso();
   if(x0>x1)return null;
   const pad=30,top=60,footH=30+lines.length*16;
@@ -2014,6 +2086,48 @@ document.getElementById("exDxf").onclick=async()=>{
   if(!d)return toast("図面がまだありません");
   await saveFile(`sgp-${SYS()==="thread"?"white":"black"}-${today().f}.dxf`,new Blob([d],{type:"application/dxf"}),()=>showPreview(`<p class="note">この環境ではファイルを保存できません。GitHub版のページから書き出してください。</p>`));
 };
+
+/* ===================== 45°芯ズレ計算（45°エルボ2個） ===================== */
+const offBox=document.getElementById("off45");
+const offVal=document.getElementById("offVal");
+function offState(){if(!S.off)S.off={sys:"weld",size:"25",dir:"x2y",val:""};return S.off;}
+function renderOff(){
+  const o=offState(),TH=o.sys==="thread",T=TH?S.tbl.thread:S.tbl.weld,sz=o.size,gap=TH?0:(parseFloat(S.gap)||0);
+  offBox.querySelectorAll("[data-osys]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.osys===o.sys));
+  offBox.querySelectorAll("[data-odir]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.odir===o.dir));
+  document.getElementById("offSize").value=sz;
+  document.getElementById("offLabel").textContent=o.dir==="x2y"?"芯々のズレ X（mm）":"真ん中の単管のカット長 Y（mm）";
+  offVal.setAttribute("aria-label",document.getElementById("offLabel").textContent);
+  if(document.activeElement!==offVal)offVal.value=o.val;
+  const out=document.getElementById("offOut"),R2=Math.SQRT2;
+  const A=num(T.L45&&T.L45[sz]),Nn=TH?num(S.tbl.thread.N[sz]):0;
+  const svgT=(x,t,c)=>{document.getElementById("oX").textContent=x;document.getElementById("oT").textContent=t;document.getElementById("oC").textContent=c;};
+  if(A===null||Nn===null){out.innerHTML=`<p class="err">${sz}A の${A===null?"45°エルボ寸法":"ねじ込み長さ"}が未設定です（設定欄で入力）</p>`;svgT("X","T","Y");return;}
+  const ded=TH?A-Nn:A+gap,dedTxt=TH?`(45°エルボ${r1(A)} − ねじ込み${r1(Nn)})`:(gap?`(45°エルボ${r1(A)} ＋ ギャップ${r1(gap)})`:`45°エルボ${r1(A)}`);
+  const v=num(o.val);
+  if(v===null||v<=0){out.innerHTML=`<p class="note">${o.dir==="x2y"?"芯々のズレ":"単管のカット長"}を入れると計算します。</p>`;svgT("X","T","Y");return;}
+  let X,Tr,Y;
+  if(o.dir==="x2y"){X=v;Tr=X*R2;Y=Tr-2*ded;}else{Y=v;Tr=Y+2*ded;X=Tr/R2;}
+  const bad=Y<=0;
+  svgT(r1(X),r1(Tr),bad?"?":r1(Y));
+  let h=`<div class="ores"><div><span>芯々のズレ X</span><b class="${o.dir==="y2x"?"c-red":""}">${r1(X)}</b></div>`+
+    `<div><span>斜めの芯々 T</span><b>${r1(Tr)}</b></div>`+
+    `<div><span>単管のカット長 Y</span><b class="${o.dir==="x2y"?"c-red":""}">${bad?"—":r1(Y)}</b></div>`+
+    `<div><span>前進量（長手方向）</span><b>${r1(X)}</b></div></div>`;
+  if(bad)h+=`<p class="err">ズレが小さすぎて、45°エルボ2個の間に単管が入りません（エルボ同士を直接つなぐ寸法より小さいです）。</p>`;
+  h+=`<div class="fbox2"><div class="fh">計算式</div>`+(o.dir==="x2y"
+    ?`<div>T ＝ X × √2 ＝ ${r1(X)} × 1.4142 ＝ ${r1(Tr)}</div><div>Y ＝ T − 2 × ${dedTxt} ＝ ${r1(Tr)} − ${r1(2*ded)} ＝ <b class="c-red">${bad?"—":r1(Y)}</b></div>`
+    :`<div>T ＝ Y ＋ 2 × ${dedTxt} ＝ ${r1(Y)} ＋ ${r1(2*ded)} ＝ ${r1(Tr)}</div><div>X ＝ T ÷ √2 ＝ ${r1(Tr)} ÷ 1.4142 ＝ <b class="c-red">${r1(X)}</b></div>`)+`</div>`;
+  out.innerHTML=h;
+}
+offBox.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;const o=offState();
+  if(b.dataset.osys){o.sys=b.dataset.osys;save();renderTbl();renderOff();}
+  else if(b.dataset.odir&&b.dataset.odir!==o.dir){o.dir=b.dataset.odir;o.val="";offVal.value="";save();renderOff();}
+});
+document.getElementById("offSize").innerHTML=SIZES.map(s=>`<option value="${s}">${s}A</option>`).join("");
+document.getElementById("offSize").onchange=e=>{offState().size=e.target.value;save();renderOff();};
+offVal.addEventListener("input",()=>{offState().val=offVal.value;save();renderOff();});
 
 applyMode();
 </script>
