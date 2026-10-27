@@ -266,7 +266,7 @@ div.sumbar button{padding:4px 10px}
 .fbox .ind{padding-left:1.2em}
 /* ===== 寸法入力パネルを上下に詰める：左に入力リスト、右にテンキー ===== */
 .kp-topbtns{display:inline-flex;gap:6px;flex:0 0 auto}
-#flipBtn{min-height:26px;padding:2px 8px}
+#flipBtn,#addSockBtn{min-height:26px;padding:2px 8px}
 .kp-body{width:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
 .kp-pad.iso{padding:4px 8px calc(6px + env(safe-area-inset-bottom,0px))}
 .kp-pad.iso .kp-top{max-width:640px;margin-bottom:3px;font-size:13px}
@@ -374,6 +374,40 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
 .swing{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-top:3px;font-size:11px}
 .swing>span{color:var(--sub);margin-right:2px}
 .swing .chk{min-height:20px;padding:0 6px;font-size:11.5px}
+/* 寸法入力：部品入力を上に広く、テンキーは下に低く横長で置く */
+.kp-pad.iso .kp-body{display:flex;flex-direction:column;gap:4px;max-width:640px;align-items:stretch}
+.kp-pad.iso .kp-extra{flex:1 1 auto;max-height:none;min-height:0}
+.kp-pad.iso .iso-rows{max-height:min(42vh,300px);max-height:min(42dvh,300px)}
+.kp-pad.iso .kp-keys{flex:0 0 auto;width:100%;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,27px);grid-auto-rows:27px;gap:3px}
+.kp-pad.iso .kp-keys button{font-size:16px;padding:0;border-radius:6px;min-height:0}
+.kp-pad.iso .kp-keys .fn,.kp-pad.iso .kp-keys .next{font-size:13px}
+.kp-pad.iso .kp-keys .next{grid-row:2/4;grid-column:6}
+.kp-keys .calc{display:none}.kp-pad.iso .kp-keys .calc{display:block;grid-area:1/6}
+.kp-calc[hidden]{display:none}
+.kp-pad.calcmode .kp-keys:not(.ck){display:none}
+.calc-top{display:flex;gap:4px;margin-bottom:3px}
+.calc-disp{flex:1;min-width:0;height:28px;line-height:28px;padding:0 8px;text-align:right;font-size:18px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--bg);overflow:hidden;white-space:nowrap}
+.calc-top button{font:inherit;font-size:13px;min-width:56px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
+.calc-top .cin{background:var(--steel);color:var(--surface);border-color:var(--steel);font-weight:800}
+.kp-pad.iso .ck{grid-template-rows:repeat(3,27px)}
+.kp-pad.iso .ck button{grid-area:auto}
+.kp-pad.iso .kp-keys [data-key="7"]{grid-area:1/1}.kp-pad.iso .kp-keys [data-key="8"]{grid-area:1/2}.kp-pad.iso .kp-keys [data-key="9"]{grid-area:1/3}
+.kp-pad.iso .kp-keys [data-key="back"]{grid-area:1/4}.kp-pad.iso .kp-keys [data-key="clear"]{grid-area:1/5}
+.kp-pad.iso .kp-keys [data-key="4"]{grid-area:2/1}.kp-pad.iso .kp-keys [data-key="5"]{grid-area:2/2}.kp-pad.iso .kp-keys [data-key="6"]{grid-area:2/3}
+.kp-pad.iso .kp-keys [data-key="neg"]{grid-area:2/4}.kp-pad.iso .kp-keys [data-key="."]{grid-area:2/5}
+.kp-pad.iso .kp-keys [data-key="1"]{grid-area:3/1}.kp-pad.iso .kp-keys [data-key="2"]{grid-area:3/2}.kp-pad.iso .kp-keys [data-key="3"]{grid-area:3/3}
+.kp-pad.iso .kp-keys [data-key="0"]{grid-area:3/4/4/6}
+/* 部品の入力は1行に：名前と操作ボタン ＋ 寸法マスを横に並べる */
+.kp-pad.iso .pbox{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:2px 4px}
+.kp-pad.iso .phead{flex:0 0 auto;flex-wrap:nowrap;margin:0;font-size:11.5px;white-space:nowrap;gap:3px}
+.kp-pad.iso .ptools{display:inline-flex;gap:2px;align-items:center}
+.kp-pad.iso .cells{flex:1 1 190px;min-width:0;gap:3px}
+.kp-pad.iso .cell{padding:0 3px}
+.kp-pad.iso .cell span{font-size:9px}
+.kp-pad.iso .cell b{font-size:14px;line-height:1.15}
+.kp-pad.iso .pbox.first .cells{flex-basis:100%}
+.kp-pad.iso .swing{flex:1 0 100%;margin-top:0}
+body.kp-open .wrap{padding-bottom:340px}
 </style>
 </head>
 <body data-mode="weld">
@@ -406,6 +440,7 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
       <button type="button" data-pt="tee" title="エルボ→チーズ" aria-label="エルボをチーズに">┳<small>T</small></button>
       <button type="button" data-pt="short" title="エルボ ノーマル⇄ショート" aria-label="エルボ ノーマル・ショート切替">⌐<small>N/S</small></button>
       <button type="button" data-pt="reducer" title="レジューサ" aria-label="レジューサ">▷<small>R</small></button>
+      <button type="button" data-pt="socket" title="ソケット（白管）" aria-label="ソケット">⊏⊐<small>S</small></button>
       <button type="button" data-pt="flange" title="端フランジ" aria-label="端フランジ">⊣<small>F</small></button>
       <button type="button" data-pt="del" title="部品を外す" aria-label="部品を外す">✕</button>
     </div>
@@ -468,7 +503,7 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
   </details>
   <footer class="appfoot">
     <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
-    <p class="copy">SGP 切断長計算 v1.1.1　© 2026 retzrs-ops. All rights reserved.</p>
+    <p class="copy">SGP 切断長計算 v1.2.0　© 2026 retzrs-ops. All rights reserved.</p>
   </footer>
 </div>
 
@@ -506,7 +541,7 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
   </div>
 </div>
 <div class="kp-pad" id="kp" aria-label="テンキー">
-  <div class="kp-top"><span id="kpLabel"></span><span class="kp-topbtns"><button type="button" class="flip" id="flipBtn">⇄ 起点</button><button type="button" data-key="close">閉じる</button></span></div>
+  <div class="kp-top"><span id="kpLabel"></span><span class="kp-topbtns"><button type="button" class="flip" id="addSockBtn" title="直線の一番最後に、ソケットと新しい配管を追加する">ソケット追加</button><button type="button" class="flip" id="flipBtn">⇄ 起点</button><button type="button" data-key="close">閉じる</button></span></div>
   <div class="kp-body">
   <div class="kp-extra" id="kpExtra" style="display:none">
     <input id="isoInput" class="kp" type="text" inputmode="none" autocomplete="off" aria-label="寸法">
@@ -521,8 +556,17 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
     <button type="button" class="fn" data-key="clear" aria-label="全部消す">C</button>
     <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
     <button type="button" class="next" data-key="next" id="kpNext">次へ</button>
+    <button type="button" class="fn calc" data-key="calc" aria-label="電卓">電卓</button>
     <button type="button" class="fn" data-key="neg" aria-label="プラスマイナス切替">±</button>
     <button type="button" data-key="0">0</button><button type="button" data-key=".">.</button>
+  </div>
+  <div class="kp-calc" id="kpCalc" hidden>
+    <div class="calc-top"><div class="calc-disp" id="calcDisp">0</div><button type="button" class="cin" data-c="in">転入</button><button type="button" data-c="exit">戻る</button></div>
+    <div class="kp-keys ck">
+      <button type="button" data-c="7">7</button><button type="button" data-c="8">8</button><button type="button" data-c="9">9</button><button type="button" class="fn" data-c="÷">÷</button><button type="button" class="fn" data-c="×">×</button><button type="button" class="fn" data-c="back" aria-label="1文字消す">⌫</button>
+      <button type="button" data-c="4">4</button><button type="button" data-c="5">5</button><button type="button" data-c="6">6</button><button type="button" class="fn" data-c="−">−</button><button type="button" class="fn" data-c="+">＋</button><button type="button" class="fn" data-c="clear" aria-label="全部消す">C</button>
+      <button type="button" data-c="1">1</button><button type="button" data-c="2">2</button><button type="button" data-c="3">3</button><button type="button" data-c="0">0</button><button type="button" data-c=".">.</button><button type="button" class="fn" data-c="=">＝</button>
+    </div>
   </div>
   </div>
 </div>
@@ -549,16 +593,17 @@ const MODES={
     lead:"芯寸法から継手の引き寸法（芯先寸法 − ねじ込み長さ）を引いて、管の切断長を出します。フランジは面からの控え寸法を引きます。",
     setTitle:"継手寸法の設定（ねじ込み）",
     fits:{L:"エルボ",L45:"45°エルボ",T:"チーズ",F:"ねじ込みフランジ"},
-    cols:{L:"エルボ",L45:"45°エルボ",T:"チーズ",F:"フランジ控え",N:"ねじ込み長さ",RS:"径違いソケット長"},
+    cols:{L:"エルボ",L45:"45°エルボ",T:"チーズ",F:"フランジ控え",N:"ねじ込み長さ",RS:"径違いソケット長",S:"ソケット長"},
     def:{
       L:  {"15":27,"20":32,"25":38,"32":46,"40":48,"50":57,"65":69,"80":78},
       L45:{"15":21,"20":25,"25":29,"32":34,"40":37,"50":42,"65":49,"80":54},
       T:  {"15":27,"20":32,"25":38,"32":46,"40":48,"50":57,"65":69,"80":78},
       F:  {"15":7,"20":9,"25":10,"32":11,"40":12,"50":13,"65":15,"80":17},
       N:  {"15":11,"20":13,"25":15,"32":17,"40":18,"50":20,"65":23,"80":25},
-      RS: {"15":null,"20":null,"25":null,"32":null,"40":null,"50":null,"65":null,"80":null}
+      RS: {"15":null,"20":null,"25":null,"32":null,"40":null,"50":null,"65":null,"80":null},
+      S:  {"15":36,"20":42,"25":48,"32":54,"40":58,"50":66,"65":76,"80":84}
     },
-    note:"継手の初期値は JIS B 2301 ねじ込み式可鍛鋳鉄製管継手の芯先寸法（mm）、ねじ込み長さは一般的な目安です。締め込み具合で変わるので、現場や社内基準の値に合わせてください。ねじ込みフランジの控え寸法（フランジ面から管端まで）は、25A＝10mm を基準にねじ込み長さの比率で各口径を割り出した値です。径違いソケット長（大径側の口径の行）は、白管アイソメで途中にレジューサを置いたときに使います。お使いの継手の全長を入れてください。入力した値はこのブラウザに保存されます。"
+    note:"継手の初期値は JIS B 2301 ねじ込み式可鍛鋳鉄製管継手の芯先寸法（mm）、ねじ込み長さは一般的な目安です。締め込み具合で変わるので、現場や社内基準の値に合わせてください。ねじ込みフランジの控え寸法（フランジ面から管端まで）は、25A＝10mm を基準にねじ込み長さの比率で各口径を割り出した値です。径違いソケット長（大径側の口径の行）は、白管アイソメで途中にレジューサを置いたときに使います。お使いの継手の全長を入れてください。ソケット長は白管アイソメのソケット用の目安値（全長）で、4mを超える配管に自動で入るソケットにも使います。お使いの継手に合わせて直してください。入力した値はこのブラウザに保存されます。"
   }
 };
 const KEY="sgp-cut-calc-v1";
@@ -751,13 +796,13 @@ function openKp(el){
   kpLabel.textContent=labelOf(el);
   const lens=[...document.querySelectorAll('.seg input[data-k="len"]')];
   kpNext.textContent=el===isoInput?"次の配管へ":(el.dataset.k==="len"&&lens[lens.length-1]===el)?"次の辺へ":"次へ";
-  kpExtra.style.display=el===isoInput?"":"none";kp.classList.toggle("iso",el===isoInput);if(el!==isoInput)document.getElementById("flipBtn").style.display="none";
+  kpExtra.style.display=el===isoInput?"":"none";kp.classList.toggle("iso",el===isoInput);if(el!==isoInput){document.getElementById("flipBtn").style.display="none";document.getElementById("addSockBtn").style.display="none";calcMode(false);}
   document.body.classList.add("kp-open");
   if(el!==isoInput)setTimeout(()=>el.scrollIntoView({block:"center",behavior:"smooth"}),60);
 }
 function closeKp(){
   if(active){active.classList.remove("kp-active");active.blur();}
-  active=null;document.body.classList.remove("kp-open");
+  active=null;document.body.classList.remove("kp-open");calcMode(false);
   if(sel){sel=null;renderIso();}
 }
 document.addEventListener("focusin",e=>{
@@ -767,7 +812,9 @@ document.addEventListener("focusin",e=>{
 kp.addEventListener("pointerdown",e=>e.preventDefault()); // 入力欄のフォーカスを保つ
 kp.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b||!active)return;
+  if(b.dataset.c)return calcKey(b.dataset.c);
   const k=b.dataset.key;if(!k)return;
+  if(k==="calc")return calcMode(true);
   if(k==="close")return closeKp();
   if(k==="next")return goNext();
   let v=active.value;
@@ -785,6 +832,34 @@ kp.addEventListener("click",e=>{
   active.value=v;
   active.dispatchEvent(new Event("input",{bubbles:true}));
 });
+/* ---- 電卓：四則演算の結果を、いま入力中の欄へ手動で転入する ---- */
+let calcExpr="";
+const calcDisp=document.getElementById("calcDisp");
+function calcMode(on){kp.classList.toggle("calcmode",on);document.getElementById("kpCalc").hidden=!on;if(on){calcExpr="";calcShow();}}
+function calcShow(){calcDisp.textContent=calcExpr===""?"0":calcExpr;}
+function calcEval(){ // 掛け算・割り算を先に。不正な式は null
+  const t=calcExpr.replace(/[×÷−+]$/,"").match(/\d+\.?\d*|\.\d+|[×÷−+]/g);if(!t)return null;
+  const a=[];let i=0;if(t[0]==="−"){t.shift();t[0]="-"+(t[0]||"");}
+  const n=x=>/^-?\d|^-?\./.test(x)?parseFloat(x):NaN;
+  a.push(n(t[0]));
+  for(i=1;i<t.length;i+=2){const op=t[i],v=n(t[i+1]);if(isNaN(v))return null;
+    if(op==="×")a[a.length-1]*=v;else if(op==="÷"){if(v===0)return null;a[a.length-1]/=v;}else a.push(op==="+"?v:-v);}
+  const r=a.reduce((x,y)=>x+y,0);return isNaN(r)||!isFinite(r)?null:Math.round(r*10)/10;}
+function calcKey(c){
+  if(c==="exit")return calcMode(false);
+  if(c==="in"){
+    const r=calcEval();if(r===null){calcDisp.textContent="エラー";calcExpr="";return;}
+    if(!active)return;
+    active.value=String(r);active.dispatchEvent(new Event("input",{bubbles:true}));fresh=true;
+    calcMode(false);return;} // 転入したら、いつものテンキーに戻る
+  if(c==="clear")calcExpr="";
+  else if(c==="back")calcExpr=calcExpr.slice(0,-1);
+  else if(c==="=="||c==="="){const r=calcEval();calcExpr=r===null?"":String(r);if(r===null){calcDisp.textContent="エラー";return;}}
+  else if(/[×÷−+]/.test(c)){if(calcExpr===""&&c!=="−")return;calcExpr=/[×÷−+]$/.test(calcExpr)?calcExpr.slice(0,-1)+c:calcExpr+c;}
+  else if(c==="."){const last=calcExpr.split(/[×÷−+]/).pop();if(last.includes("."))return;calcExpr+=last===""?"0.":".";}
+  else calcExpr+=c;
+  calcShow();
+}
 function goNext(){
   const el=active;
   if(el===isoInput)return isoNext();
@@ -833,10 +908,12 @@ function swingOf(from,p0,v){
 }
 function cos3(a,b){const la=Math.hypot(...a),lb=Math.hypot(...b);return (a[0]*b[0]+a[1]*b[1]+a[2]*b[2])/(la*lb||1);}
 const ek=(a,b)=>a<b?a+"|"+b:b+"|"+a;
-const PART_NAME={valve:"バルブ",flex:"フレキ",reducer:"レジューサ",flange:"フランジ",fpair:"フランジ"};
-const REF={open:"先",flange:"面",pend:"端",elbow:"芯",elbow45:"芯",tee:"芯",valve:"面",flex:"面",fpair:"面",reducer:"中心"};
+const PART_NAME={valve:"バルブ",flex:"フレキ",reducer:"レジューサ",flange:"フランジ",fpair:"フランジ",socket:"ソケット"};
+const REF={open:"先",flange:"面",pend:"端",elbow:"芯",elbow45:"芯",tee:"芯",valve:"面",flex:"面",fpair:"面",reducer:"中心",socket:"中心"};
 const CIR="①②③④⑤⑥⑦⑧⑨⑩⑪⑫";
-const isPartT=t=>t==="valve"||t==="flex"||t==="fpair"||t==="reducer";
+const isPartT=t=>t==="valve"||t==="flex"||t==="fpair"||t==="reducer"||t==="socket";
+const isCtr=t=>t==="reducer"||t==="socket"; // 長さを持たず「中心」の位置で入れる部品
+const MAXLEN=4000; // 白管の定尺（4m）
 const fx=n=>Math.round(n*10)/10;
 function metaText(m){if(!m||!m.at)return "";const d=new Date(m.at),z=n=>String(n).padStart(2,"0");
   return `${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}　${m.by?m.by:"（名前未設定）"}`;}
@@ -948,7 +1025,7 @@ function computeRuns(){
     let s=d.size||S.iso.size;
     o.pieces.forEach(p=>{const ex=(S.iso.pieces[p.key]||{}).size;if(ex)s=ex;p.sz=s;});
     const pos=o.parts.map(k=>num((d.pos||{})[k]));
-    const span=o.parts.map(k=>{const pt=S.iso.parts[k];return pt.t==="reducer"?0:pt.t==="fpair"?packV():num(pt.len);});
+    const span=o.parts.map(k=>{const pt=S.iso.parts[k];return isCtr(pt.t)?0:pt.t==="fpair"?packV():num(pt.len);});
     // 直結：部品どうしをパッキンだけ挟んでつなぐ（間に配管なし）。位置は前の部品から自動で決まる
     o.pieces.forEach(p=>{p.direct=!!(S.iso.pieces[p.key]||{}).direct&&canDirect(p.a,p.b);});
     // 端部のバルブ・フレキは全長に含める：起点側なら面間ぶん後ろから、終点側なら面間ぶん手前まで
@@ -956,6 +1033,16 @@ function computeRuns(){
     const sOff=pendLen(o.from),eOff=pendLen(o.to);
     const endOf=i=>i===0?sOff:((pos[i-1]===null||span[i-1]===null)?null:pos[i-1]+span[i-1]);
     for(let i=0;i<o.parts.length;i++)if(o.pieces[i].direct){const e=endOf(i);pos[i]=e===null?null:e+packV();}
+    // ソケット：位置は入力せず、手前のカット寸から割り出す。「調整」のソケットは残りの寸法になる
+    const sk=i=>S.iso.parts[o.parts[i]].t==="socket";
+    const adjI=o.pieces.findIndex(p=>p.key===d.adjKey); // 調整管（1直線に1本）：その配管を残り寸法にする
+    const cutIn=i=>i<o.parts.length?(d.scut||{})[o.parts[i]]:d.lcut; // 配管 i のカット長の入力値（最後の配管は d.lcut）
+    const lenOf=i=>{const c=num(cutIn(i));if(c===null)return null; // 配管 i の長さ＝カット＋両端の引き寸法
+      try{const q=o.pieces[i];return c+endDed(q.a,q)+endDed(q.b,q);}catch(_){return null;}};
+    for(let i=0;i<(adjI<0?o.parts.length:adjI);i++)if(sk(i)){const st=endOf(i),L=lenOf(i);pos[i]=(st===null||L===null)?null:st+L;}
+    if(adjI>=0)for(let i=o.parts.length-1;i>=adjI;i--)if(sk(i)){ // 調整：終点側から割り戻す
+      const en=i+1===o.parts.length?((total===null||eOff===null)?null:total-eOff):pos[i+1],L=lenOf(i+1);
+      pos[i]=(en===null||en===undefined||L===null)?null:en-L;}
     const last=o.pieces.length-1;
     if(o.pieces[last].direct){const e=endOf(o.parts.length);total=(e===null||eOff===null)?null:e+packV()+eOff;run.total=total;run.autoTotal=true;}else run.autoTotal=false;
     run.pos=pos;
@@ -997,6 +1084,7 @@ function endDed(k,p,acc){
       let v=add(nm+(mx!==sz?`(${mx}A)`:""),need(c,mx,nm+"寸法"));v+=add("ギャップ",gap);
       if(+sz<+mx){v+=add("レジューサ",need("R",mx,"レジューサ長"));v+=add("ギャップ",gap);}
       return v;}
+    case "socket":return add("ソケット½",need("S",sz,"ソケット長")/2)+screwIn(); // 白管：ソケット全長の½ − ねじ込み長さ
     case "reducer":{
       const o=nd.pieces.find(q=>q!==p),os=o?psz(o):sz;
       if(os===sz)throw "レジューサ前後の口径が同じです（寸法入力で変更後の口径を選んでください）";
@@ -1006,6 +1094,10 @@ function endDed(k,p,acc){
     default:throw "この形の分岐には対応していません";
   }
 }
+/* カット長の表記：自動ソケットで分かれたら「4000×2＋1230」 */
+function cutTxt(r){if(!r.cuts)return String(r.cut);
+  const g=[];for(const c of r.cuts){const l=g[g.length-1];if(l&&l[0]===c)l[1]++;else g.push([c,1]);}
+  return g.map(([c,n])=>n>1?c+"×"+n:String(c)).join("＋");}
 function pieceCalc(p){
   if(p.direct)return {ref:"直結",direct:true};
   const ref=(REF[G.nodes.get(p.a).type]||"?")+"〜"+(REF[G.nodes.get(p.b).type]||"?");
@@ -1016,9 +1108,54 @@ function pieceCalc(p){
   if(p.len===null)return {ref,empty:true};
   const cut=r1(p.len-A-B);
   if(cut<=0)return {ref,error:"寸法が継手より短いです"};
-  return {ref,cut,da,db,formula:`${r1(p.len)} − ${r1(A)} − ${r1(B)}`};
+  let cuts=null,sd=0;
+  if(SYS()==="thread"&&cut>MAXLEN){ // 白管は定尺4m：超える分は4mごとにソケットを自動で入れる
+    const sz=psz(p),Sv=num(S.tbl.thread.S&&S.tbl.thread.S[sz]),Nv=num(S.tbl.thread.N[sz]);
+    if(Sv===null||Nv===null)return {ref,error:`${sz}A のソケット長が未設定です（ねじ込みモードの設定欄）`};
+    sd=Sv-2*Nv;let rem=cut;cuts=[];
+    while(rem>MAXLEN&&rem-MAXLEN-sd>=1){cuts.push(MAXLEN);rem=r1(rem-MAXLEN-sd);}
+    cuts.push(rem);
+  }
+  return {ref,cut:cuts?r1(cuts.reduce((a,b)=>a+b,0)):cut,cuts:cuts&&cuts.length>1?cuts:null,sd,da,db,formula:`${r1(p.len)} − ${r1(A)} − ${r1(B)}`};
 }
 
+/* 直線の一番最後に、ソケットと新しい配管を足す。ソケットは今の末端に入り、末端は1本延びる。
+   今の最後の配管の長さ（カット寸）は残し、全長は入れ直してもらう */
+function addSocketEnd(){
+  const run=curRun();
+  if(!run||SYS()!=="thread")return toast("白管のアイソメで、直線の寸法を選んでから押してください");
+  const o=run.o,endK=o.to,nd=G.nodes.get(endK);
+  if(!nd||nd.type!=="open")return toast("直線の端がバルブや継手のため、ここには追加できません");
+  const lp=o.pieces[o.pieces.length-1];
+  if(lp.direct)return toast("直結の配管の後ろには追加できません");
+  const pts=lp.b===endK?lp.pts:[...lp.pts].reverse();
+  const a=PK(pts[pts.length-2]),b=PK(pts[pts.length-1]);
+  const nk=KK(2*b[0]-a[0],2*b[1]-a[1]);
+  if(G.nodes.has(nk)||E.has(ek(endK,nk))||G.adj&&G.adj.has(nk))return toast("その先にすでに配管があるため追加できません");
+  pushUndo();
+  const oldCut=pieceCalc(lp).cut;
+  const keep=run.a===endK?run.b:run.a,oldKey=run.key,newKey=ek(keep,nk);
+  E.add(ek(endK,nk));syncEdges();
+  S.iso.parts[endK]={t:"socket"};
+  const rd=S.iso.runs[oldKey]||{};delete S.iso.runs[oldKey];
+  if(rd.from===endK)rd.from=nk;
+  delete rd.total;
+  rd.scut=rd.scut||{};if(oldCut!==undefined&&oldCut!==null)rd.scut[endK]=oldCut; // 今の最後の配管のカット寸はそのまま残す
+  S.iso.runs[newKey]=rd;
+  save();renderIso();
+  sel={kind:"run",key:newKey,field:"total"};refreshPanel(true);
+  toast("ソケットと配管を追加しました。全長を入れ直してください");
+}
+
+/* 配管の番号：4m を超える配管は 4m ごとに割るので、割った1本ずつに番号が付く（区間の先頭から通し番号）
+   base[j]＝配管 j より前にある配管の本数、cnt[j]＝配管 j が割れて出来る本数 */
+function numbering(run){const base=[],cnt=[];let acc=0;
+  for(const p of run.o.pieces){const r=p.direct?null:pieceCalc(p),c=r&&r.cuts?r.cuts.length:1;base.push(acc);cnt.push(c);acc+=c;}
+  return {base,cnt};}
+const NO=n=>CIR[n-1]||`(${n})`;
+/* ソケット：全長・両側の飲み込み代（ねじ込み長さ×2）・ソケット分（全長−両飲み込み代） */
+function sockDims(sz){const Ls=num(S.tbl.thread.S&&S.tbl.thread.S[sz]),N=num(S.tbl.thread.N&&S.tbl.thread.N[sz]);
+  return {Ls,N,inner:Ls===null||N===null?null:r1(Ls-2*N)};}
 /* ---- 描画 ---- */
 function buildGrid(){
   const R=40;let d="";const L=GS*R*2.6;
@@ -1119,9 +1256,12 @@ function renderIso(){
     const p0=PK(run.pieces[0].pts[0]),p1=PK(run.pieces[0].pts[1]),dg=DIAG[(p1[0]-p0[0])+","+(p1[1]-p0[1])];if(!dg)continue;
     const n=run.pieces.reduce((a,p)=>a+p.pts.length-1,0),[ai,aj]=PK(A),C=KK(ai+dg.u[0][0]*n,aj+dg.u[0][1]*n);
     pipes.push(poly([ppos(A),ppos(C),ppos(Bk)],"hatch"));}
+  // 入力中の部品（ソケットなど）の手前の配管を強調する
+  let selPc=null;if(selPart)for(const run of G.runs){const si=run.o.parts.indexOf(selPart);if(si>=0){selPc=run.o.pieces[si];break;}}
   for(const p of G.pieces){
     const a=ppos(p.a),b=ppos(p.b);
     if(selRun&&p.run===selRun)pipes.push(ln(a,b,"selpipe"));
+    if(selPc&&p===selPc)pipes.push(ln(a,b,"selpipe"));
     pipes.push(ln(a,b,"pipe"));
   }
   const PD=partDraw();
@@ -1137,7 +1277,7 @@ function renderIso(){
     const o=run.o,A0=ppos(o.from),B0=ppos(o.to),u0=Math.hypot(B0.x-A0.x,B0.y-A0.y)||1,u={x:(B0.x-A0.x)/u0,y:(B0.y-A0.y)/u0},n=outN(B0.x-A0.x,B0.y-A0.y);
     const ext=e=>{const nd=G.nodes.get(e);return nd.type==="pend"?2*PEXT[S.iso.parts[e].t]:0;};
     const A={x:A0.x-u.x*ext(o.from),y:A0.y-u.y*ext(o.from)},B={x:B0.x+u.x*ext(o.to),y:B0.y+u.y*ext(o.to)};
-    const red=p=>{if(!S.iso.showCut)return null;const r=pieceCalc(p);return r.cut!==undefined?[String(r.cut),"red"]:(r.error?["!","red"]:null);};
+    const red=p=>{if(!S.iso.showCut)return null;const r=pieceCalc(p);return r.cut!==undefined?[cutTxt(r),"red"]:(r.error?["!","red"]:null);};
     if(!o.parts.length){
       // 部品なし：配管長＝全長
       const p=o.pieces[0],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,L=run.total;
@@ -1150,7 +1290,7 @@ function renderIso(){
       continue;
     }
     // 部品あり：追い出し寸法（破線・起点●→）と全長（実線・両端）を分けて描く
-    const d=rdat(run),np=o.parts.length;
+    const d=rdat(run),np=o.parts.length,NBm=numbering(run);
     o.parts.forEach((k,i)=>{
       const pt=S.iso.parts[k],ee={valve:11,flex:14,fpair:2.5}[pt.t]||0; // 部品の起点側の面（レジューサは中心）を指す
       const P=at(PD.c[k]||ppos(k),u,-ee,0),h=18+i*14,s0=off(A,n,h),s1=off(P,n,h);
@@ -1158,10 +1298,10 @@ function renderIso(){
       labels.push(ln(s0,s1,"dimline dash"));
       labels.push(poly([s1,at(s1,u,-7,-3),at(s1,u,-7,3)],"dimarrow"));
       const v=run.pos[i],dr=o.pieces[i].direct;
-      const t=[["起点→"+PART_NAME[pt.t]+CIR[i]+(pt.t==="reducer"?"(中心) ":" "),"dimcap"],v===null?["?","muted"]:[String(r1(v)),"blue"],dr?[" 直結","dimcap"]:null];
+      const t=[["起点→"+PART_NAME[pt.t]+(pt.t==="socket"?NO(NBm.base[i]+NBm.cnt[i]):CIR[i])+(isCtr(pt.t)?"(中心) ":" "),"dimcap"],v===null?["?","muted"]:[String(r1(v)),"blue"],dr?[" 直結","dimcap"]:null];
       const bk=u;if(n.vert)lbl(s1.x+4,s1.y-4,t,"start",bk,MR(s0,s1,n));
       else{const q=at(s1,u,-10,0);lbl(q.x,q.y-4,t,"end",bk,MR(s0,s1,n));}
-      tag({run:run.key,f:"pos:"+k});
+      tag({run:run.key,f:(pt.t==="socket"?"scut:":"pos:")+k});
     });
     const h=18+np*14+4,t0=off(A,n,h),t1=off(B,n,h);
     labels.push(ln(off(A,n,6),off(A,n,h+4),"dimext"),ln(off(B,n,6),off(B,n,h+4),"dimext"));
@@ -1174,11 +1314,11 @@ function renderIso(){
     if(n.vert)lbl(mid.x+5,mid.y+4,tt,"start",u,MR(t0,t1,n));else lbl(mid.x+n.x*6,mid.y+n.y*6-2,tt,"middle",u,MR(t0,t1,n));
     tag({run:run.key,f:"total"});
     // 反対側：各配管のカット寸法
-    for(const p of o.pieces){
+    for(const [j,p] of o.pieces.entries()){ // 配管には①②…の番号を付ける
       const a=ppos(p.a),b=ppos(p.b),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
       if(p.direct){const dt=[["直結（パッキン"+r1(packV())+"）","sm"]];
         if(n.vert)lbl(mx-10,my+4,dt,"end",u,MR(a,b,n));else lbl(mx-n.x*12,my-n.y*12+9,dt,"middle",u,MR(a,b,n));continue;}
-      const rr=red(p),tt=[[psz(p)+"A","szb"],SEP,p.len===null?["?","muted"]:[String(r1(p.len)),"blue"],...(rr?[SEP,rr]:[])];
+      const rr=red(p),nbj=NBm.base[j],nc=NBm.cnt[j],pno=nc>1?`配管${NO(nbj+1)}〜${NO(nbj+nc)}`:`配管${NO(nbj+1)}`,tt=[[pno+" "+psz(p)+"A","szb"],SEP,p.len===null?["?","muted"]:[String(r1(p.len)),"blue"],...(rr?[SEP,rr]:[])];
       if(n.vert)lbl(mx-10,my+4,tt,"end",u,MR(a,b,n));
       else lbl(mx-n.x*12,my-n.y*12+9,tt,"middle",u,MR(a,b,n));
       tag({run:run.key,f:"total"});
@@ -1226,6 +1366,11 @@ function renderIso(){
         lbl(q.x,q.y+(o.vert?4:9),[["面間"+(len===null?"?":r1(len))+(scr?" ネジ":"")+(nd.type==="pend"?"（端部）":"")+(nd.type==="pend"&&!scr?(pt.noPack?" パッキンなし":" パッキン"+r1(packV())):""),len===null&&nd.type!=="pend"?"sm warn":"sm"]],o.vert?"end":"middle",d,MR(c,c,o));
         tag({run:nd.pieces[0].run.key,f:"len:"+nd.k});
         c=c0;break;}
+      case "socket":{marks.push(poly([at(c,d,-5,-7),at(c,d,5,-7),at(c,d,5,7),at(c,d,-5,7)],"m-part"));
+        // ソケットに番号と「ソケット分の長さ」を付ける。タップするとカット寸の入力へ
+        const run0=ps[0].run,si=run0.o.parts.indexOf(nd.k),nb0=numbering(run0),sd=sockDims(psz(ps[0])),oo=outN(d.x,d.y),q={x:c.x-oo.x*20,y:c.y-oo.y*20};
+        lbl(q.x,q.y+(oo.vert?4:9),[[`ソケット${si>=0?NO(nb0.base[si]+nb0.cnt[si]):""}`,"sm"],["\n"],[`ソケット分 ${sd.inner===null?"?":r1(sd.inner)}mm`,"sm"]],oo.vert?"end":"middle",d,MR(c,c,oo));
+        tag({run:run0.key,f:"scut:"+nd.k});break;}
       case "reducer":{
         const q2=ps[1]||ps[0];const big=+psz(ps[0])>=+psz(q2)?d:unitDir(nd.k,q2);
         marks.push(redShape(c,big));break;}
@@ -1328,7 +1473,7 @@ function jointCounts(){
     switch(nd.type){
       case "elbow":case "elbow45":J(mx,2,2);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break; // 口径が変わる所はレジューサも数える
       case "tee":J(mx,3,3);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break;
-      case "reducer":J(mx,2,2);break;
+      case "reducer":case "socket":J(mx,2,2);break;
       case "flange":J(psz(nd.pieces[0]),2,1);break;                 // 端フランジ
       case "fpair":for(const q of nd.pieces)J(psz(q),2,1);break;      // フランジ2枚
       case "valve":case "flex":case "pend":
@@ -1337,21 +1482,28 @@ function jointCounts(){
         break;
     }
   }
+  if(TH)for(const p of G.pieces){if(p.direct)continue;const r=pieceCalc(p);if(r.cuts)add(N,psz(p),2*(r.cuts.length-1));} // 自動ソケットのねじ込み
   return {W,N};
 }
+function socketCounts(){const m={},add=(sz,n)=>{m[sz]=(m[sz]||0)+n;};
+  if(SYS()!=="thread")return m;
+  for(const nd of G.nodes.values())if(nd.type==="socket"&&nd.pieces.length)add(psz(nd.pieces[0]),1);
+  for(const q of G.pieces){if(q.direct)continue;const r=pieceCalc(q);if(r.cuts)add(psz(q),r.cuts.length-1);} // 4m超で足した分
+  return m;}
 function renderSum(){
   const box=document.getElementById("isoSum");
   if(!S.iso.showCut||!G.pieces.length){box.innerHTML="";return;}
   const tot={},errs=new Set();let miss=0;
   for(const p of G.pieces){const r=pieceCalc(p);if(r.direct)continue;
     if(r.error)errs.add(r.error);else if(r.empty)miss++;
-    else{const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n++;tot[s].sum+=r.cut;}}
+    else{const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n+=r.cuts?r.cuts.length:1;tot[s].sum+=r.cut;}}
   const {W,N}=jointCounts();
   let h=`<p class="legend">凡例：口径 / <span class="c-blue">全長</span> / <span class="c-red">カット長</span></p>`;
-  const ks=[...new Set([...Object.keys(tot),...Object.keys(W),...Object.keys(N)])].sort((a,b)=>a-b);
+  const SC=socketCounts(),TH2=SYS()==="thread";
+  const ks=[...new Set([...Object.keys(tot),...Object.keys(W),...Object.keys(N),...Object.keys(SC)])].sort((a,b)=>a-b);
   if(ks.length){
-    h+=`<table class="sumtbl"><tr><th>口径</th><th>本数</th><th>カット合計</th><th>溶接</th><th>ねじ込み</th></tr>`+
-      ks.map(s=>`<tr><td>${s}A</td><td>${tot[s]?tot[s].n+"本":"−"}</td><td>${tot[s]?r1(tot[s].sum)+" mm":"−"}</td><td>${W[s]||0}箇所</td><td>${N[s]||0}箇所</td></tr>`).join("")+
+    h+=`<table class="sumtbl"><tr><th>口径</th><th>本数</th><th>カット合計</th><th>溶接</th><th>ねじ込み</th>${TH2?"<th>ソケット</th>":""}</tr>`+
+      ks.map(s=>`<tr><td>${s}A</td><td>${tot[s]?tot[s].n+"本":"−"}</td><td>${tot[s]?r1(tot[s].sum)+" mm":"−"}</td><td>${W[s]||0}箇所</td><td>${N[s]||0}箇所</td>${TH2?`<td>${SC[s]||0}個</td>`:""}</tr>`).join("")+
       `</table>`+
       `<p class="note sumnote">数え方：エルボ2・チーズ3・レジューサ2、SOPフランジは内外で2（フランジ2枚は4）。白管はねじ込み継手を同じ数で、ねじ込みフランジ・ネジ接続の部品は1箇所として数えます。</p>`;
   }
@@ -1379,6 +1531,7 @@ const HINT={
 function setIsoMode(m){
   isoMode=m;closeKp();
   document.querySelector('#isoParts [data-pt="short"]').style.display=SYS()==="thread"?"none":""; // 白管にショートエルボはない
+  document.querySelector('#isoParts [data-pt="socket"]').style.display=SYS()==="thread"?"":"none"; // ソケットは白管だけ
   if(SYS()==="thread"&&isoTool==="short")isoTool="valve";
   document.querySelectorAll("#isoModes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.im===m));
   document.getElementById("isoParts").style.display=m==="part"?"":"none";
@@ -1459,7 +1612,7 @@ function isoTap(w){
     const v=V(),sx=w.x*v.k+v.x,sy=w.y*v.k+v.y,pad=6,hit=LBOX.find(h=>sx>=h.b.x0-pad&&sx<=h.b.x1+pad&&sy>=h.b.y0-pad&&sy<=h.b.y1+pad);
     if(hit&&G.rmap.get(hit.tg.run))return openIsoEdit(hit.tg.run,hit.tg.f);
     const nd=nearestNode(w,18/V().k,n=>isPartT(n.type)||n.type==="pend");
-    if(nd)return openIsoEdit(nd.pieces[0].run.key,(nd.type==="pend"?"len:":"pos:")+nd.k);
+    if(nd)return openIsoEdit(nd.pieces[0].run.key,(nd.type==="pend"?"len:":nd.type==="socket"?"scut:":"pos:")+nd.k);
     const p=nearestPiece(w,TH());
     if(p)return openIsoEdit(p.run.key,"total");
     return closeKp();
@@ -1500,7 +1653,7 @@ function isoTap(w){
   for(const k of inner){const q=ppos(k),d=Math.hypot(q.x-w.x,q.y-w.y);if(d<bd){bd=d;best=k;}}
   pushUndo();S.iso.parts[best]={t:isoTool,len:isoTool==="fpair"?"3":null,conn:SYS()==="thread"?"screw":"flange"};save();renderIso();
   const run=G.nodes.get(best).pieces[0].run;
-  openIsoEdit(run.key,((isoTool==="reducer"||isoTool==="fpair")?"pos:":"len:")+best,true);
+  openIsoEdit(run.key,(isoTool==="socket"?"scut:":(isoTool==="reducer"||isoTool==="fpair")?"pos:":"len:")+best,true);
 }
 
 /* ---- 計算式の表示（図の左下） ---- */
@@ -1521,10 +1674,11 @@ function renderFbox(){
     const r=pieceCalc(p);
     if(r.error){h+=`<div class="fl err">${nm}：${r.error}</div>`;return;}
     if(r.empty){h+=`<div class="fl">${nm}：寸法がまだ入っていません</div>`;return;}
-    const L=`<span class="c-blue">${r1(p.len)}</span>`,cut=`${L}${fmtDed(r.da)}${fmtDed(r.db)} ＝ <b class="c-red">${r.cut}</b>`;
+    const L=`<span class="c-blue">${r1(p.len)}</span>`,cut=`${L}${fmtDed(r.da)}${fmtDed(r.db)} ＝ <b class="c-red">${r.cuts?r1(r.cuts.reduce((a,b)=>a+b,0)+(r.cuts.length-1)*r.sd):r.cut}</b>`;
     if(p.lenSrc&&p.lenSrc.st) // 部品の位置から割り出した長さは、その式も出す
       h+=`<div class="fl"><b>${nm}</b> ${psz(p)}A　長さ ${r1(p.lenSrc.en)} − ${r1(p.lenSrc.st)} ＝ ${L}</div><div class="fl ind">カット ${cut}</div>`;
     else h+=`<div class="fl"><b>${nm}</b> ${psz(p)}A　${cut}</div>`;
+    if(r.cuts)h+=`<div class="fl ind">4m超：ソケットを${r.cuts.length-1}か所自動で足す（配管${r.cuts.length}本・1か所 ${r1(r.sd)}）→ <b class="c-red">${cutTxt(r)}</b></div>`;
   });
   fbox.innerHTML=h;fbox.hidden=false;positionFbox();
 }
@@ -1540,24 +1694,30 @@ window.addEventListener("resize",()=>positionFbox());
 /* ---- 寸法入力（直管区間ごと：全長＋部品の追い出し位置・面間） ---- */
 function curRun(){return sel?G.rmap.get(sel.key):null;}
 function fieldsOf(run){
-  const o=run.o,refA=REF[G.nodes.get(o.from).type],refB=REF[G.nodes.get(o.to).type];
+  const o=run.o,refA=REF[G.nodes.get(o.from).type],refB=REF[G.nodes.get(o.to).type],nb=numbering(run),adjIdx=o.pieces.findIndex(p=>p.key===rdat(run).adjKey);
+  const lastN=i=>NO(nb.base[i]+nb.cnt[i]); // 配管 i の最後の1本の番号（ソケットはこの番号で呼ぶ）
   const fs=[run.autoTotal?{id:"total",label:`配管全長（直結で自動）`,cls:"total",auto:true,get:()=>run.total===null?"":r1(run.total),set:()=>{}}:{id:"total",label:run.diag?`芯々のズレ X（45° ${run.dirTxt}・斜め${run.total===null?"?":r1(run.total)}）`:`配管全長（${refA}〜${refB}）`,cls:"total",
     get:()=>{const d=rdat(run);return d.total??(run.total!==null&&!o.parts.length?run.total:"");},
     set:v=>{rdatW(run).total=v;},chip:"run"}];
   for(const e of [o.from,o.to])if(G.nodes.get(e).type==="pend"){const pt=S.iso.parts[e];
     fs.push({id:"len:"+e,label:`${PART_NAME[pt.t]}（端部） 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:e});}
   o.parts.forEach((k,i)=>{
-    const pt=S.iso.parts[k],nm=PART_NAME[pt.t]+CIR[i];
+    const pt=S.iso.parts[k],nm=PART_NAME[pt.t]+(pt.t==="socket"?lastN(i):CIR[i]);
     const getPos=()=>((rdat(run).pos)||{})[k]??"",setPos=v=>{const d=rdatW(run);(d.pos=d.pos||{})[k]=v;};
     if(o.pieces[i].direct){
       fs.push({id:"pos:"+k,label:`起点→${nm}（直結で自動）`,short:"起点から（直結で自動）",cls:"pos",auto:true,get:()=>run.pos[i]===null?"":r1(run.pos[i]),set:()=>{},part:k});
       if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
-    }else if(pt.t==="reducer")fs.push({id:"pos:"+k,label:`起点→${nm}（中心）`,short:"起点から（中心）",cls:"pos",get:getPos,set:setPos,chip:"red",idx:i,part:k});
+    }else if(pt.t==="socket"){
+      if(i===adjIdx)fs.push({id:"scut:"+k,label:`配管${lastN(i)} のカット寸（ソケット${lastN(i)}の手前・調整で残り寸法）`,short:`配管${lastN(i)}カット`,cls:"len",auto:true,get:()=>{const r=pieceCalc(o.pieces[i]);return r.cut!==undefined?cutTxt(r):"";},set:()=>{},part:k});
+      else fs.push({id:"scut:"+k,label:`配管${lastN(i)} のカット寸（ソケット${lastN(i)}の手前）`,short:`配管${lastN(i)}カット`,cls:"len",get:()=>(rdat(run).scut||{})[k]??"",set:v=>{const dd=rdatW(run);(dd.scut=dd.scut||{})[k]=v;},part:k});
+    }else if(isCtr(pt.t))fs.push({id:"pos:"+k,label:`起点→${nm}（中心）`,short:"起点から（中心）",cls:"pos",get:getPos,set:setPos,chip:pt.t==="reducer"?"red":undefined,idx:i,part:k});
     else{
       fs.push({id:"pos:"+k,label:`起点→${nm}`,short:"起点から",cls:"pos",get:getPos,set:setPos,part:k});
       if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
     }
   });
+  if(adjIdx>=0&&adjIdx<o.parts.length) // 調整管があると、最後の配管は長さを入れる
+    fs.push({id:"lcut",label:`配管${lastN(o.parts.length)} のカット寸（終端側）`,short:`配管${lastN(o.parts.length)}カット`,cls:"len",get:()=>rdat(run).lcut??"",set:v=>{rdatW(run).lcut=v;},part:o.parts[o.parts.length-1]});
   return fs;
 }
 function curField(){const run=curRun();if(!run)return null;const fs=fieldsOf(run);return fs.find(f=>f.id===sel.field)||fs[0];}
@@ -1573,16 +1733,19 @@ function refreshPanel(loadValue){
   const ac=(lab,v,cls)=>`<div class="cell auto${cls?" "+cls:""}"><span>${lab}</span><b>${v}</b></div>`;
   const many=run.o.pieces.length>1;
   // 配管の長さとカット（2マス）。直結なら1つにまとめる
-  const pipeCells=(p,i)=>{if(!p)return "";if(p.direct)return ac("直結",`P${r1(packV())}`,"span2");
-    const r=pieceCalc(p);return ac("配管"+(many?CIR[i]:""),p.len===null?"?":r1(p.len))+ac("カット",r.cut!==undefined?r.cut:r.error?"⚠":"—","cut");};
+  const NB=numbering(run);
+
   const dirBtn=p=>p&&canDirect(p.a,p.b)?`<button type="button" class="chk${p.direct?" on":""}" data-direct="${p.key}" title="次の部品と直結">⇔</button>`:"";
-  const ptools=(k,isEnd)=>{const pt=S.iso.parts[k],vf=pt.t==="valve"||pt.t==="flex";if(!vf)return "";
+  const ptools=(k,isEnd)=>{const pt=S.iso.parts[k],vf=pt.t==="valve"||pt.t==="flex";
+    if(pt.t==="socket")return "";
+    if(!vf)return "";
     return `<button type="button" class="chk${isEnd?" on":""}" data-end="${k}" title="端部">端</button>`+
       (isEnd&&pt.conn!=="screw"?`<button type="button" class="chk${pt.noPack?"":" on"}" data-nopack="${k}" title="パッキンを引く">P</button>`:"")+
       `<span class="conn"><button type="button" data-conn="flange" data-k="${k}" class="${(pt.conn||"flange")==="flange"?"on":""}" title="フランジ接続">F</button><button type="button" data-conn="screw" data-k="${k}" class="${pt.conn==="screw"?"on":""}" title="ネジ接続">S</button></span>`;};
-  const SYM={valve:"⋈",flex:"〰",fpair:"‖",reducer:"▷"};
+  const SYM={valve:"⋈",flex:"〰",fpair:"‖",reducer:"▷",socket:"⊏⊐"};
   const box=(cls,head,body)=>`<div class="pbox ${cls}">${head}${body}</div>`;
   const head=(name,tools)=>`<div class="phead"><span>${name}</span><span class="ptools">${tools}</span></div>`;
+
   const o0=run.o,t0=fs[0],partCells=k=>fs.filter(x=>x.part===k).map(x=>cell(x,x.short&&x.short.startsWith("起点")?(x.auto?"起点(自動)":x.short.includes("中心")?"起点(中心)":"起点"):x.short));
   // 1行目：全長・起点側の配管・カット
   const tLab=run.diag?"ズレX":run.autoTotal?"全長(自動)":"全長 "+t0.label.replace(/^配管全長（|）$/g,"");
@@ -1590,13 +1753,40 @@ function refreshPanel(loadValue){
   let swingRow="";
   if(run.diag)swingRow=run.swing?`<div class="swing"><span>振り</span>${run.swing.opts.map(op=>`<button type="button" class="chk${op.v.join()===run.swing.s.join()?" on":""}" data-swing="${op.v.join(",")}">${op.lab}</button>`).join("")}</div>`
     :`<div class="swing"><span class="err">起点側が45°エルボではありません。⇄起点で入れ替えてください</span></div>`;
-  let h=box("first","",`<div class="cells c3">${cell(t0,tLab)}${pipeCells(o0.pieces[0],0)}</div>${swingRow}`);
+  // 主は配管。1本の配管＝1行で「配管寸法」と、その右に付くソケット（おまけ）を並べる。
+  // 4m を超えた配管は、割った1本ごとに行を足す（配管②、配管③…）。ソケットは配管の右側に付く
+  const sockAt=i=>S.iso.parts[o0.parts[i]]?.t==="socket";
+  const inputFor=i=>{if(i<o0.parts.length&&sockAt(i))return fs.find(x=>x.id==="scut:"+o0.parts[i]);
+    if(i===o0.parts.length)return fs.find(x=>x.id==="lcut");return null;}; // 寸法入力（ソケット手前のカット寸・終端のカット寸）
+  const f2=v=>v===null||v===undefined?"?":r1(v);
+  const sockTxt=p=>{const sd=sockDims(psz(p));return sd.inner===null?"?":`${f2(sd.Ls)}−${f2(2*sd.N)}＝${f2(sd.inner)}`;};
+  const pipeRows=i=>{const p=o0.pieces[i];if(!p)return "";
+    if(p.direct)return box("",head("直結",dirBtn(p)),`<div class="cells c2">${ac("直結",`P${r1(packV())}`,"span2")}</div>`);
+    const r=pieceCalc(p),b=NB.base[i],c=NB.cnt[i],sf=inputFor(i),endSock=i<o0.parts.length&&sockAt(i),k0=o0.parts[i];
+    let out="";
+    for(let k=0;k<c;k++){const no=NO(b+k+1),last=k===c-1;
+      let cutC;
+      if(sf&&k===0)cutC=cell(sf,c===1?`配管${no} カット寸`:`配管${NO(b+1)}〜${NO(b+c)} カット寸（合計）`);
+      else{const v=r.cuts?r.cuts[k]:(r.cut!==undefined?cutTxt(r):r.error?"⚠":"—");cutC=ac(`配管${no} カット寸`,v,"cut");}
+      let att="";
+      if(!last)att=ac(`ソケット${no} 分（全長−両飲込）`,sockTxt(p),"sockin");
+      else if(endSock)att=ac(`ソケット${no} 分（全長−両飲込）`,sockTxt(p),"sockin");
+      const hi=last&&endSock&&sel.field&&sel.field.endsWith(":"+k0)?"cur":(sf&&k===0&&sel.field===sf.id?"cur":"");
+      const adjB=`<button type="button" class="chk${rdat(run).adjKey===p.key?" on":""}" data-adjp="${p.key}" title="この配管を残り寸法で調整する（1直線に1本だけ）">調整管</button>`;
+      const tools=adjB+(last&&!endSock?dirBtn(p):"");
+      out+=box(hi,head(`配管${no}`,tools),`<div class="cells c2">${cutC}${att}</div>`);}
+    return out;};
+  let h=box("first","",`<div class="cells c3">${cell(t0,tLab)}</div>${swingRow}`);
   // 起点側の端部
   if(G.nodes.get(o0.from).type==="pend"){const e=o0.from,pt=S.iso.parts[e];
     h+=box(sel.field==="len:"+e?"cur":"",head(`${SYM[pt.t]}${PART_NAME[pt.t]}(端)`,ptools(e,true)+dirBtn(o0.pieces[0])),`<div class="cells c3">${partCells(e).join("")}</div>`);}
-  o0.parts.forEach((k,i)=>{const pt=S.iso.parts[k],nx=o0.pieces[i+1],pc=partCells(k);
-    const nm=`${SYM[pt.t]||""}${PART_NAME[pt.t]}${CIR[i]}`;
-    h+=box(sel.field&&sel.field.endsWith(":"+k)?"cur":"",head(nm,ptools(k,false)+dirBtn(nx)),`<div class="cells c${pc.length+2}">${pc.join("")}${pipeCells(nx,i+1)}</div>`);});
+  h+=pipeRows(0);
+  o0.parts.forEach((k,i)=>{const pt=S.iso.parts[k];
+    if(pt.t!=="socket"){ // 配管以外の部品（バルブ・フレキなど）はその欄。ソケットは配管の右側の欄として、上の配管行に入る
+      const nm=`${SYM[pt.t]||""}${PART_NAME[pt.t]}${CIR[i]}`;
+      h+=box(sel.field&&sel.field.endsWith(":"+k)?"cur":"",head(nm,ptools(k,false)),`<div class="cells c${partCells(k).length+1}">${partCells(k).join("")}</div>`);}
+    h+=pipeRows(i+1);});
+
   if(G.nodes.get(o0.to).type==="pend"){const e=o0.to,pt=S.iso.parts[e];
     h+=box(sel.field==="len:"+e?"cur":"",head(`${SYM[pt.t]}${PART_NAME[pt.t]}(端)`,ptools(e,true)),`<div class="cells c3">${partCells(e).join("")}</div>`);}
   rowBox.innerHTML=h;
@@ -1609,9 +1799,10 @@ function refreshPanel(loadValue){
   chipBox.style.display=cur?"":"none";
   if(cur)chipBox.innerHTML=`<span class="chipcap">${f.chip==="red"?"変更後":"口径"}</span>`+SIZES.map(s=>`<button type="button" data-sz="${s}" class="${s===cur?"on":""}">${s}A</button>`).join("");
   flipBtn.style.display=(o.parts.length||run.diag)?"":"none";
+  document.getElementById("addSockBtn").style.display=SYS()==="thread"&&!run.diag?"":"none";
   // 割り出し結果
   if(o.parts.length||o.pieces.some(q=>q.direct)){const er=o.pieces.map(pieceCalc).find(r=>r.error);calcLine.innerHTML=er?`<span class="err">${er.error}</span>`+(!run.autoTotal&&f.id!=="total"?` <button type="button" class="chk" data-goto="total">全長を直す</button>`:""):"";}
-  else{const r=pieceCalc(o.pieces[0]);calcLine.innerHTML=r.cut!==undefined?`カット <b class="c-red">${r.cut}</b>`:(r.error?`<span class="err">${r.error}</span>`:"");}
+  else{const r=pieceCalc(o.pieces[0]);calcLine.innerHTML=r.cut!==undefined?`カット <b class="c-red">${cutTxt(r)}</b>`:(r.error?`<span class="err">${r.error}</span>`:"");}
   kpLabel.textContent=f.label+"（mm）";
 }
 calcLine.addEventListener("click",e=>{
@@ -1624,6 +1815,13 @@ rowBox.addEventListener("click",e=>{
   const dd=e.target.closest("button[data-direct]");
   if(dd){pushUndo();const pd=S.iso.pieces[dd.dataset.direct]=S.iso.pieces[dd.dataset.direct]||{};pd.direct=!pd.direct;
     save();renderIso();refreshPanel(false);toast(pd.direct?"直結にしました（パッキンだけを挟みます）":"直結を外しました");return;}
+  const aj=e.target.closest("button[data-adjp]");
+  if(aj){const run=curRun();
+    if(run){pushUndo();const d=rdatW(run),on=d.adjKey!==aj.dataset.adjp;
+      if(on)d.adjKey=aj.dataset.adjp;else delete d.adjKey;
+      save();renderIso();refreshPanel(false);
+      toast(on?"この配管を調整管（残り寸法）にしました":"調整管を外しました");}
+    return;}
   const np=e.target.closest("button[data-nopack]");
   if(np){const pt=S.iso.parts[np.dataset.nopack];if(pt){pushUndo();pt.noPack=!pt.noPack;save();renderIso();refreshPanel(false);
     toast(pt.noPack?"端部のパッキンは引かないようにしました":"端部のパッキン厚を引きます");}return;}
@@ -1642,12 +1840,17 @@ chipBox.addEventListener("click",e=>{
   else{const i=f.idx,next=redIdx.find(r=>r>i);(S.iso.pieces[o.pieces[i+1].key]=S.iso.pieces[o.pieces[i+1].key]||{}).size=s;clear(i+2,next===undefined?o.pieces.length-1:next);}
   save();renderIso();refreshPanel(false);
 });
+document.getElementById("addSockBtn").addEventListener("click",()=>addSocketEnd());
 flipBtn.addEventListener("click",()=>{
   const run=curRun();if(!run)return;
   const d=rdatW(run),T=num(d.total)===null?null:num(d.total)*(run.diag?Math.SQRT2:1);
+  const oldCut=run.o.pieces.map(q=>{const r=pieceCalc(q);return r.cut!==undefined?String(r.cut):"";}),oldParts=[...run.o.parts];
+  if(oldParts.some(k=>S.iso.parts[k].t==="socket")){ // ソケットの配管長は、向きを変えた側の「手前の配管」に付け替える（調整は外す）
+    d.scut=d.scut||{};oldParts.forEach((k,oi)=>{const q=S.iso.parts[k];if(q.t==="socket"){d.scut[k]=oldCut[oi+1];}});
+    d.lcut=oldCut[0];}
   // 追い出し位置を反対側から測った値に換算する
   if(T!==null&&d.pos)for(const k of run.parts){const v=num(d.pos[k]);if(v===null)continue;
-    const pt=S.iso.parts[k],sp=pt.t==="reducer"?0:pt.t==="fpair"?packV():num(pt.len);
+    const pt=S.iso.parts[k],sp=isCtr(pt.t)?0:pt.t==="fpair"?packV():num(pt.len);
     if(sp!==null)d.pos[k]=String(r1(T-v-sp));}
   d.from=run.o.from===run.a?run.b:run.a;
   save();renderIso();refreshPanel(true);toast("起点を反対側にしました（位置も換算済み）");
@@ -1694,7 +1897,7 @@ function toggleEnd(k){
     const spk=num(S.iso.parts[k].len)||0;
     if(d.from!==k){nd2.from=other;nd2.pos=Object.assign({},d.pos||{});const T=num(d.total);if(T!==null)nd2.pos[k]=String(r1(T-spk));}
     else{nd2.from=other;const T=num(d.total);if(T!==null){nd2.pos={[k]:String(r1(T-spk))};
-      for(const j of run.parts){const v=num((d.pos||{})[j]),pt=S.iso.parts[j],sp=pt.t==="reducer"?0:pt.t==="fpair"?packV():num(pt.len);
+      for(const j of run.parts){const v=num((d.pos||{})[j]),pt=S.iso.parts[j],sp=isCtr(pt.t)?0:pt.t==="fpair"?packV():num(pt.len);
         if(v!==null&&sp!==null)nd2.pos[j]=String(r1(T-v-sp));}}}
     const nk=ek(other,p2);S.iso.runs[nk]=nd2;save();renderIso();
     sel={kind:"run",key:nk,field:"total"};refreshPanel(true);toast("端部を外して、先に配管を足しました。全長を入れ直してください");return;
@@ -1871,9 +2074,9 @@ function buildExportSvg(){
     const b=g.getBBox();x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.width);y1=Math.max(y1,b.y+b.height);}
   const body=["grid","pipes","marks","labels","labelsW"].map(id=>`<g>${document.getElementById(id).innerHTML}</g>`).join("");lw.innerHTML="";
   // 口径ごとの合計
-  const tot={};for(const p of G.pieces){const r=pieceCalc(p);if(r.cut!==undefined){const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n++;tot[s].sum+=r.cut;}}
+  const tot={};for(const p of G.pieces){const r=pieceCalc(p);if(r.cut!==undefined){const s=psz(p);tot[s]=tot[s]||{n:0,sum:0};tot[s].n+=r.cuts?r.cuts.length:1;tot[s].sum+=r.cut;}}
   const JC=jointCounts();
-  const lines=[...new Set([...Object.keys(tot),...Object.keys(JC.W),...Object.keys(JC.N)])].sort((a,b)=>a-b).map(s=>`${s}A　${tot[s]?tot[s].n:0}本　カット合計 ${tot[s]?r1(tot[s].sum):0} mm　溶接 ${JC.W[s]||0}箇所　ねじ込み ${JC.N[s]||0}箇所`);
+  const SC=socketCounts(),lines=[...new Set([...Object.keys(tot),...Object.keys(JC.W),...Object.keys(JC.N),...Object.keys(SC)])].sort((a,b)=>a-b).map(s=>`${s}A　${tot[s]?tot[s].n:0}本　カット合計 ${tot[s]?r1(tot[s].sum):0} mm　溶接 ${JC.W[s]||0}箇所　ねじ込み ${JC.N[s]||0}箇所${SC[s]?`　ソケット ${SC[s]}個`:""}`);
   S.iso.showCut=prev;sel=prevSel;renderIso();
   if(x0>x1)return null;
   const pad=30,top=60,footH=30+lines.length*16;
@@ -2070,7 +2273,7 @@ function buildModel(){
     const latIdx=k=>{let n=0;for(const p of o.pieces){const pts=p.pts[0]===(o.pieces.indexOf(p)===0?o.from:null)?p.pts:p.pts;}return 0;};
     const tot=gl(r);let acc=0;const latPos={};
     for(let i=0;i<o.pieces.length;i++){acc+=o.pieces[i].pts.length-1;if(i<o.parts.length)latPos[o.parts[i]]=acc/tot*L;}
-    const parts=o.parts.map((k,i)=>{const pt=S.iso.parts[k],span=pt.t==="reducer"?0:pt.t==="fpair"?pk:(num(pt.len)||150);
+    const parts=o.parts.map((k,i)=>{const pt=S.iso.parts[k],span=isCtr(pt.t)?0:pt.t==="fpair"?pk:(num(pt.len)||150);
       let s=r.pos[i];if(s===null||s===undefined)s=latPos[k]-span/2;return {k,pt,s,e:s+span,span,i};});
     // 端の扱い
     const endInfo=(node,atStart)=>{const nd=G.nodes.get(node),p=atStart?o.pieces[0]:o.pieces[o.pieces.length-1],sz=psz(p);
@@ -2093,7 +2296,8 @@ function buildModel(){
       const sz=psz(p),od=SGP_OD[sz]||30;
       let end;
       if(i<o.parts.length){const P=parts[i],pt=P.pt,tf=FL_T[sz]||14,fod=FL_OD[sz]||120;
-        if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+psz(o.pieces[i+1]))))||50;end=P.s-R/2;}
+        if(pt.t==="socket"){end=P.s-(nv(TB,"S",sz)||40)/2;}
+        else if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+psz(o.pieces[i+1]))))||50;end=P.s-R/2;}
         else if(pt.t==="fpair"){end=P.s-kae(sz);}
         else if(p.direct){end=P.s;}
         else if(pt.conn==="screw"){end=P.s;}
@@ -2101,7 +2305,8 @@ function buildModel(){
       }else end=last;
       if(!p.direct&&end>cur)els.push({t:"pipe",a:at3(cur),b:at3(end),od});
       if(i<o.parts.length){const P=parts[i],pt=P.pt,sz2=psz(o.pieces[i+1]),tf=FL_T[sz]||14,fod=FL_OD[sz]||120;
-        if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+sz2)))||50;
+        if(pt.t==="socket"){const Ls=nv(TB,"S",sz)||40;els.push({t:"socket",a:at3(P.s-Ls/2),b:at3(P.s+Ls/2),od});cur=P.s+Ls/2;}
+        else if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+sz2)))||50;
           els.push({t:"reducer",a:at3(P.s-R/2),b:at3(P.s+R/2),od1:od,od2:SGP_OD[sz2]||30});cur=P.s+R/2;}
         else if(pt.t==="fpair"){els.push({t:"flange",c:at3(P.s),ax:vmul(dir,-1),th:tf,od:fod},{t:"flange",c:at3(P.s+pk),ax:dir,th:tf,od:fod});cur=P.s+pk+kae(sz2);}
         else{
@@ -2171,6 +2376,10 @@ function makeDXF(){
         if(e.t==="valve"){L("PART",off(a,n,h),off(b,n,-h));L("PART",off(a,n,-h),off(b,n,h));L("PART",off(a,n,h),off(a,n,-h));L("PART",off(b,n,h),off(b,n,-h));L("PART",m,off(m,n,h*1.4));}
         else{rect("PART",a,b,h*0.6);const zz=4;let prev=null;for(let z=0;z<=zz;z++){const t=0.15+0.7*z/zz,p=off({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t},n,(z%2?1:-1)*h*0.32);if(prev)L("PART",prev,p);prev=p;}} // フレキ：箱＋ゆるい波線
         const sd=(pc++%2)?-1:1,tp=off(m,n,sd*(h+TXH*(sd>0?1.3:2.2)));T("DIM",{x:tp.x-TXH*2,y:tp.y},e.label); // 並んだ部品は文字を交互に上下へ
+      }else if(e.t==="socket"){
+        const a=P(e.a),b=P(e.b);
+        if(Math.hypot(b.x-a.x,b.y-a.y)<0.5){C("FIT",a,v.ex?e.od*0.6:TXH*0.5);continue;}
+        rect("FIT",a,b,v.ex?e.od*0.62:TXH*0.6);
       }else if(e.t==="reducer"){
         const a=P(e.a),b=P(e.b);
         if(!v.ex||Math.hypot(b.x-a.x,b.y-a.y)<0.5){if(v.ex){C("FIT",a,e.od1/2);C("FIT",a,e.od2/2);}continue;}
