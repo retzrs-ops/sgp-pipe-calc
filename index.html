@@ -100,6 +100,7 @@ body[data-mode^="iso"] .wrap{padding-bottom:40px}
 .tools.sub button{font-size:.88rem;font-weight:600;padding:6px 10px;border-radius:999px}
 .hint{color:var(--sub);font-size:.82rem;margin:0 0 6px;min-height:2.6em}
 #isoBox{position:relative;height:53vh;min-height:290px;max-height:646px;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+html,body{touch-action:manipulation} /* 画面のダブルタップ拡大を止める（2本指の拡大は残す） */
 #isoSvg{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
 .zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
 .zoom button{width:40px;height:40px;font:inherit;font-size:1.2rem;font-weight:700;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;opacity:.92}
@@ -505,7 +506,7 @@ body.kp-open .wrap{padding-bottom:340px}
   </details>
   <footer class="appfoot">
     <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
-    <p class="copy">SGP 切断長計算 v1.2.1　© 2026 retzrs-ops. All rights reserved.</p>
+    <p class="copy">SGP 切断長計算 v1.2.2　© 2026 retzrs-ops. All rights reserved.</p>
   </footer>
 </div>
 
