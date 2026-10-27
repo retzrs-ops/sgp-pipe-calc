@@ -468,7 +468,7 @@ body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display
   </details>
   <footer class="appfoot">
     <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
-    <p class="copy">SGP 切断長計算 v1.1.0　© 2026 retzrs-ops. All rights reserved.</p>
+    <p class="copy">SGP 切断長計算 v1.1.1　© 2026 retzrs-ops. All rights reserved.</p>
   </footer>
 </div>
 
@@ -1938,9 +1938,38 @@ async function pack(obj){
     return "z"+b64u(z);}
   return "j"+b64u(raw);
 }
+/* 圧縮データの展開（DecompressionStream がない古いブラウザ用に、自前の展開処理も持つ） */
+function inflateRaw(data){
+  let pos=0,bb=0,bc=0;const out=[];
+  const need=n=>{while(bc<n){if(pos>=data.length)throw new Error("データが途中で切れています");bb|=data[pos++]<<bc;bc+=8;}};
+  const bits=n=>{if(!n)return 0;need(n);const v=bb&((1<<n)-1);bb>>>=n;bc-=n;return v;};
+  const build=(len,n)=>{const count=new Uint16Array(16),offs=new Uint16Array(16),sym=new Uint16Array(n);
+    for(let i=0;i<n;i++)count[len[i]]++;count[0]=0;for(let i=1;i<16;i++)offs[i]=offs[i-1]+count[i-1];
+    for(let i=0;i<n;i++)if(len[i])sym[offs[len[i]]++]=i;return {count,sym};};
+  const dec=h=>{let code=0,first=0,index=0;for(let l=1;l<16;l++){code|=bits(1);const c=h.count[l];if(code-c<first)return h.sym[index+(code-first)];index+=c;first+=c;first<<=1;code<<=1;}throw new Error("壊れたデータです");};
+  const LB=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258],LE=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  const DB=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],DE=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+  const ORD=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+  let last;
+  do{last=bits(1);const type=bits(2);
+    if(type===0){bb=0;bc=0;if(pos+4>data.length)throw new Error("データが途中で切れています");const n=data[pos]|data[pos+1]<<8;pos+=4;for(let i=0;i<n;i++)out.push(data[pos++]);continue;}
+    let lt,dt;
+    if(type===1){const l=new Uint8Array(288);l.fill(8,0,144);l.fill(9,144,256);l.fill(7,256,280);l.fill(8,280,288);lt=build(l,288);dt=build(new Uint8Array(30).fill(5),30);}
+    else if(type===2){const hl=bits(5)+257,hd=bits(5)+1,hc=bits(4)+4,cl=new Uint8Array(19);for(let i=0;i<hc;i++)cl[ORD[i]]=bits(3);
+      const ct=build(cl,19),L=new Uint8Array(hl+hd);let i=0;
+      while(i<hl+hd){const sy=dec(ct);if(sy<16)L[i++]=sy;else{let r,v=0;if(sy===16){if(!i)throw new Error("壊れたデータです");v=L[i-1];r=3+bits(2);}else if(sy===17)r=3+bits(3);else r=11+bits(7);while(r--)L[i++]=v;}}
+      lt=build(L.subarray(0,hl),hl);dt=build(L.subarray(hl),hd);}
+    else throw new Error("壊れたデータです");
+    for(;;){const sy=dec(lt);if(sy<256)out.push(sy);else if(sy===256)break;else{const k=sy-257,len=LB[k]+bits(LE[k]),ds=dec(dt),d=DB[ds]+bits(DE[ds]);for(let j=0;j<len;j++)out.push(out[out.length-d]);}}
+  }while(!last);
+  return new Uint8Array(out);
+}
 async function unpack(t){
-  const b=ub64u(t.slice(1));
-  const txt=t[0]==="z"?await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text():new TextDecoder().decode(b);
+  const b=ub64u(t.slice(1));let txt;
+  if(t[0]==="z"){
+    if(typeof DecompressionStream==="function"){try{txt=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();}catch(_){txt=null;}}
+    if(txt==null)txt=new TextDecoder().decode(inflateRaw(b));
+  }else txt=new TextDecoder().decode(b);
   return JSON.parse(txt);
 }
 document.getElementById("exLink").onclick=async()=>{
@@ -1958,20 +1987,28 @@ document.getElementById("copyLink").onclick=async()=>{
   try{await navigator.clipboard.writeText(ta.value);toast("リンクをコピーしました");}
   catch(_){ta.focus();ta.select();try{document.execCommand("copy");toast("リンクをコピーしました");}catch(__){toast("文字を長押ししてコピーしてください");}}
 };
+let hashBusy=false;
+function clearHash(){try{history.replaceState(null,"",location.pathname+location.search);}catch(_){}}
 async function checkHash(){
   const t=(location.hash||"").slice(1);
-  if(!t||!/^[zj][A-Za-z0-9_-]+$/.test(t)||S.lastToken===t)return;
-  try{const o=await unpack(t);if(!o||o.app!=="sgp-iso"||!o.iso)return;
-    S.lastToken=t;save();
+  if(!t||hashBusy)return;
+  if(!/^[zj][A-Za-z0-9_-]+$/.test(t)){if(t.length>20)toast("共有リンクの形式が正しくありません（コピーし直してください）");return;}
+  hashBusy=true;
+  try{let o;
+    try{o=await unpack(t);}catch(e){toast("共有リンクを読み込めません："+((e&&e.message)||"データが途中で切れている可能性があります"));return;}
+    if(!o||o.app!=="sgp-iso"||!o.iso){toast("このリンクには図面が入っていません");return;}
+    clearHash(); // 読み込んだら # 以降を消して、再読み込みで何度も聞かないようにする
     const mi=o.iso.meta,mine=(o.sys==="thread"?(S.mode==="isoT"?S.iso:S.isoT):(S.mode==="isoT"?S.isoT:S.iso))||{};
     let msg="共有された図面を開きますか？（今のアイソメ図は上書きされます）";
     if(mi&&mi.at)msg=`${mi.by||"名前未設定の人"}さんが ${metaText(mi).split("　")[0]} に更新した図面です。開きますか？（今のアイソメ図は上書きされます）`;
     if(mine.meta&&mine.meta.at&&mi&&mi.at&&mine.meta.at>mi.at)msg+=`\n※手元の図面の方が新しいです（${metaText(mine.meta)}）`;
     if(!await askConfirm(msg,"開く",false))return;
     applyImported(o,true);toast("共有された図面を読み込みました");
-  }catch(_){}
+  }catch(e){toast("共有リンクを開けませんでした");}
+  finally{hashBusy=false;}
 }
 setTimeout(checkHash,300);
+window.addEventListener("hashchange",checkHash); // すでに開いているページにリンクを渡したとき
 
 /* ===================== DXF書き出し（アイソメ図＋5面図） ===================== */
 // SGP外径・JIS 10K フランジ（外径・厚さ）の目安（mm）
