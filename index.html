@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -93,7 +93,7 @@ body[data-mode^="iso"] #segs,body[data-mode^="iso"] #add,body[data-mode^="iso"] 
 body:not([data-mode="off45"]) #off45{display:none}
 body:not([data-mode^="iso"]) #iso{display:none}
 body[data-mode^="iso"] .wrap{padding-bottom:40px}
-.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px}
+.tools{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:6px}
 .tools.sub{display:flex;flex-wrap:wrap}
 .tools button{font:inherit;font-size:.85rem;font-weight:700;padding:8px 2px;line-height:1.25;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
 .tools button[aria-pressed="true"]{background:var(--steel);color:var(--surface);border-color:var(--steel)}
@@ -339,6 +339,41 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
 .fbox2{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:6px;padding:6px 10px;font-size:14px;line-height:1.7}
 .fbox2 .fh{font-size:12px;font-weight:800;color:var(--sub)}
 @media (max-width:420px){.modes{grid-template-columns:repeat(3,1fr)}}
+.hatch{fill:var(--blue);fill-opacity:.08;stroke:var(--blue);stroke-opacity:.35;stroke-width:1;stroke-dasharray:3 3}
+/* PROモード */
+.topbtns{display:inline-flex;gap:6px}
+#proBtn[aria-pressed="true"]{background:var(--steel);color:var(--surface);border-color:var(--steel);font-weight:800}
+body.pro #lead,body.pro #isoHint,body.pro .sumnote,body.pro #off45>.note{display:none}
+/* 入力パネル：部材ごとの枠 */
+.pbox{border:1px solid var(--line);border-radius:8px;padding:3px 6px 4px;background:var(--surface)}
+.pbox.first{position:sticky;top:0;z-index:1;border-color:var(--blue)}
+.pbox.cur{border-color:var(--steel);box-shadow:0 0 0 1px var(--steel)}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;font-size:12.5px;font-weight:800;margin-bottom:2px}
+.cells{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.cells.one{grid-template-columns:1fr}
+.cell{display:flex;flex-direction:column;align-items:flex-start;text-align:left;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);padding:1px 6px;cursor:pointer;min-width:0}
+.cell span{font-size:10.5px;color:var(--sub);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cell b{font-size:16px;color:var(--blue);line-height:1.25}
+.cell.on{box-shadow:0 0 0 3px var(--mark) inset}
+.cell.auto{background:transparent;border-style:dotted;cursor:default}
+.pline{display:flex;align-items:center;gap:5px;font-size:12px;margin-top:3px;flex-wrap:wrap}
+.pline b{color:var(--blue);font-size:13px}.pline em{color:var(--red);font-style:normal;margin-left:auto;font-weight:700}
+.iso-rows{gap:4px}
+/* 入力パネルをさらに小さく（1行にまとめる） */
+.cells.c2{grid-template-columns:1fr 1fr}.cells.c3{grid-template-columns:1.25fr 1fr 1fr}.cells.c4{grid-template-columns:repeat(4,1fr)}
+.cell .span2,.cell.span2{grid-column:span 2}
+.kp-pad.iso .cell{padding:0 4px;border-radius:5px}
+.kp-pad.iso .cell span{font-size:9.5px}
+.kp-pad.iso .cell b{font-size:14px}
+.cell.cut b{color:var(--red)}
+.kp-pad.iso .pbox{padding:2px 4px 3px}
+.kp-pad.iso .phead{font-size:11.5px;margin-bottom:1px}
+.kp-pad.iso .ptools .chk,.kp-pad.iso .ptools .conn button{min-height:18px;padding:0 5px;font-size:11px}
+#isoParts button{font-size:17px;line-height:1;display:inline-flex;flex-direction:column;align-items:center;min-width:40px}
+#isoParts button small{font-size:9px;font-weight:600;margin-top:1px;opacity:.8}
+.swing{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-top:3px;font-size:11px}
+.swing>span{color:var(--sub);margin-right:2px}
+.swing .chk{min-height:20px;padding:0 6px;font-size:11.5px}
 </style>
 </head>
 <body data-mode="weld">
@@ -351,7 +386,7 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
     <button type="button" data-mode="off45">45°芯ズレ<small>エルボ2個</small></button>
   </div>
   <header>
-    <div class="hrow"><h1>SGP 切断長計算</h1><button type="button" class="sharetop" id="shareBtn2">📤 共有</button></div>
+    <div class="hrow"><h1>SGP 切断長計算</h1><span class="topbtns"><button type="button" class="sharetop" id="proBtn" aria-pressed="false">PRO</button><button type="button" class="sharetop" id="shareBtn2">📤 共有</button></span></div>
     <p id="lead"></p>
   </header>
 
@@ -361,17 +396,18 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
       <button type="button" data-im="erase">🧽 消す</button>
       <button type="button" data-im="part">🔩 部品</button>
       <button type="button" data-im="dim">📏 寸法</button>
+      <button type="button" data-im="d45">↗ 45°</button>
       <button type="button" data-im="pan">✋ 移動</button>
     </div>
     <div class="tools sub" id="isoParts" role="group" aria-label="部品">
-      <button type="button" data-pt="valve">バルブ</button>
-      <button type="button" data-pt="flex">フレキ</button>
-      <button type="button" data-pt="fpair">フランジ2枚</button>
-      <button type="button" data-pt="tee">エルボ→チーズ</button>
-      <button type="button" data-pt="short">エルボ N⇄S</button>
-      <button type="button" data-pt="reducer">レジューサ</button>
-      <button type="button" data-pt="flange">端フランジ</button>
-      <button type="button" data-pt="del">部品を外す</button>
+      <button type="button" data-pt="valve" title="バルブ" aria-label="バルブ">⋈<small>V</small></button>
+      <button type="button" data-pt="flex" title="フレキ" aria-label="フレキ">〰<small>FX</small></button>
+      <button type="button" data-pt="fpair" title="フランジ2枚" aria-label="フランジ2枚">‖<small>FF</small></button>
+      <button type="button" data-pt="tee" title="エルボ→チーズ" aria-label="エルボをチーズに">┳<small>T</small></button>
+      <button type="button" data-pt="short" title="エルボ ノーマル⇄ショート" aria-label="エルボ ノーマル・ショート切替">⌐<small>N/S</small></button>
+      <button type="button" data-pt="reducer" title="レジューサ" aria-label="レジューサ">▷<small>R</small></button>
+      <button type="button" data-pt="flange" title="端フランジ" aria-label="端フランジ">⊣<small>F</small></button>
+      <button type="button" data-pt="del" title="部品を外す" aria-label="部品を外す">✕</button>
     </div>
     <p class="hint" id="isoHint"></p>
     <div id="isoBox">
@@ -432,7 +468,7 @@ body:not([data-mode^="iso"]) .appfoot{margin-bottom:60px}
   </details>
   <footer class="appfoot">
     <p class="disc"><b>免責事項</b>　本アプリの計算結果は目安です。継手の寸法、フランジ控え、ねじ込み長さ、パッキン厚などは、規格・メーカー・施工条件によって異なります。実際の切断・施工の前に、必ず現物・図面・メーカー資料で確認してください。本アプリの利用によって生じたいかなる損害についても、作者は責任を負いません。入力したデータはお使いの端末のブラウザ内にのみ保存されます。</p>
-    <p class="copy">SGP 切断長計算 v1.0.0　© 2026 retzrs-ops. All rights reserved.</p>
+    <p class="copy">SGP 切断長計算 v1.1.0　© 2026 retzrs-ops. All rights reserved.</p>
   </footer>
 </div>
 
@@ -550,6 +586,7 @@ function fromSaved(s){
     if(!n.iso.runs)n.iso.runs={};
     if(s.lastToken)n.lastToken=s.lastToken;
     if(s.userName)n.userName=s.userName;
+    if(s.pro)n.pro=true;
     if(s.off)n.off=s.off;
     if(Array.isArray(s.segs))n.segs.weld=s.segs;
     else if(s.segs){n.segs.weld=s.segs.weld;n.segs.thread=s.segs.thread;}
@@ -689,7 +726,7 @@ function setMode(m){
   if(S.mode===m)return;
   closeKp();
   if((S.mode==="isoT")!==(m==="isoT")){const t=S.iso;S.iso=S.isoT||freshIso();S.isoT=t;
-    if(!S.iso.runs)S.iso.runs={};E=new Set(S.iso.edges);undoStack=[];redoStack=[];redoMark=null;sel=null;}
+    if(!S.iso.runs)S.iso.runs={};loadEdges();undoStack=[];redoStack=[];redoMark=null;sel=null;}
   S.mode=m;markSig();save();applyMode();
 }
 document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
@@ -768,15 +805,43 @@ const PK=k=>k.split(",").map(Number);
 const KK=(i,j)=>i+","+j;
 const ppos=k=>{const [i,j]=PK(k);return {x:i*GS*C3,y:j*GS+i*GS/2};};
 const NB=[[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]];
+// 45°配管：グリッド上の斜めの1歩 → 3次元の向き v と、面を表す2つの軸の1歩（u1,u2）
+const DIAG={
+  "2,-1":{v:[1,1,0],u:[[1,0],[1,-1]]},"-2,1":{v:[-1,-1,0],u:[[-1,0],[-1,1]]},
+  "0,1":{v:[1,-1,0],u:[[1,0],[-1,1]]},"0,-1":{v:[-1,1,0],u:[[-1,0],[1,-1]]},
+  "1,-1":{v:[1,0,1],u:[[1,0],[0,-1]]},"-1,1":{v:[-1,0,-1],u:[[-1,0],[0,1]]},
+  "1,1":{v:[1,0,-1],u:[[1,0],[0,1]]},"-1,-1":{v:[-1,0,1],u:[[-1,0],[0,-1]]},
+  "1,-2":{v:[0,1,1],u:[[1,-1],[0,-1]]},"-1,2":{v:[0,-1,-1],u:[[-1,1],[0,1]]},
+  "1,0":{v:[0,1,-1],u:[[1,-1],[0,1]]},"-1,0":{v:[0,-1,1],u:[[-1,1],[0,-1]]}};
+const AX3={"1,0":[1,0,0],"-1,0":[-1,0,0],"1,-1":[0,1,0],"-1,1":[0,-1,0],"0,-1":[0,0,1],"0,1":[0,0,-1]};
+let D=new Set(); // 45°の辺
+// 辺 a→b の3次元の向き（整数ベクトル）
+function dir3k(a,b){const p=PK(a),q=PK(b),k=(q[0]-p[0])+","+(q[1]-p[1]);return D.has(ek(a,b))?(DIAG[k]||{v:[0,0,0]}).v:(AX3[k]||[0,0,0]);}
+function dirName(v){const t=[];if(v[2])t.push(v[2]>0?"上":"下");if(v[0])t.push(v[0]>0?"右手前":"左奥");if(v[1])t.push(v[1]>0?"右奥":"左手前");return t.join("・");}
+/* 45°区間の振り：起点側の配管の進行方向 t と、振る向き s（v＝t＋s） */
+function swingOpts(t){
+  if(t[2]===0){const r=[t[1],-t[0],0];return [{v:[0,0,1],lab:"↑上"},{v:[0,0,-1],lab:"↓下"},{v:r.map(x=>-x),lab:"←左"},{v:r,lab:"→右"}];}
+  return [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0]].map(v=>({v,lab:dirName(v)}));
+}
+function swingOf(from,p0,v){
+  const nd=G.nodes.get(from);if(!nd||nd.type!=="elbow45")return null;
+  const q=nd.pieces.find(x=>x!==p0);if(!q)return null;
+  const nb=q.a===from?q.pts[1]:q.pts[q.pts.length-2],b=dir3k(from,nb),t=[-b[0],-b[1],-b[2]];
+  const sv=[v[0]-t[0],v[1]-t[1],v[2]-t[2]];if(Math.abs(sv[0])+Math.abs(sv[1])+Math.abs(sv[2])!==1)return null;
+  const op=swingOpts(t).find(o=>o.v.join()===sv.join());
+  return {t,s:sv,rel:op?op.lab.replace(/^[↑↓←→]/,""):dirName(sv),opts:swingOpts(t)};
+}
+function cos3(a,b){const la=Math.hypot(...a),lb=Math.hypot(...b);return (a[0]*b[0]+a[1]*b[1]+a[2]*b[2])/(la*lb||1);}
 const ek=(a,b)=>a<b?a+"|"+b:b+"|"+a;
 const PART_NAME={valve:"バルブ",flex:"フレキ",reducer:"レジューサ",flange:"フランジ",fpair:"フランジ"};
-const REF={open:"先",flange:"面",pend:"端",elbow:"芯",tee:"芯",valve:"面",flex:"面",fpair:"面",reducer:"中心"};
+const REF={open:"先",flange:"面",pend:"端",elbow:"芯",elbow45:"芯",tee:"芯",valve:"面",flex:"面",fpair:"面",reducer:"中心"};
 const CIR="①②③④⑤⑥⑦⑧⑨⑩⑪⑫";
 const isPartT=t=>t==="valve"||t==="flex"||t==="fpair"||t==="reducer";
 const fx=n=>Math.round(n*10)/10;
 function metaText(m){if(!m||!m.at)return "";const d=new Date(m.at),z=n=>String(n).padStart(2,"0");
   return `${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}　${m.by?m.by:"（名前未設定）"}`;}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+D=new Set(S.iso.diag||[]);
 let E=new Set(S.iso.edges),G=null,undoStack=[],isoMode="draw",isoTool="valve",sel=null,LBOX=[];
 if(!S.iso.runs)S.iso.runs={};
 const svg=document.getElementById("isoSvg"),world=document.getElementById("world");
@@ -788,7 +853,8 @@ const packV=()=>{const v=num(S.pack===undefined?"3":S.pack);return v===null?0:v;
 const rdat=run=>S.iso.runs[run.key]||{};
 const rdatW=run=>S.iso.runs[run.key]=S.iso.runs[run.key]||{};
 
-function syncEdges(){S.iso.edges=[...E];}
+function syncEdges(){S.iso.edges=[...E];S.iso.diag=[...D].filter(k=>E.has(k));}
+function loadEdges(){E=new Set(S.iso.edges);D=new Set(S.iso.diag||[]);}
 function pushUndo(){const j=JSON.stringify(S.iso);
   if(undoStack.length&&stripView(undoStack[undoStack.length-1])===stripView(j))return false; // 変化のない重複は積まない
   undoStack.push(j);if(undoStack.length>60)undoStack.shift();updUR();return true;}
@@ -797,7 +863,7 @@ const stripView=j=>{try{const o=JSON.parse(j);o.view=null;o.showCut=false;o.meta
 const snap=()=>stripView(JSON.stringify(S.iso));
 function updUR(){const u=document.getElementById("undoBtn"),r=document.getElementById("redoBtn");if(!u||!r)return;
   u.disabled=!undoStack.length;r.disabled=!(redoStack.length&&snap()===redoMark);}
-function restoreIso(j){const v=S.iso.view;closeKp();S.iso=JSON.parse(j);S.iso.view=v;if(!S.iso.runs)S.iso.runs={};E=new Set(S.iso.edges);save();applyView();renderIso();}
+function restoreIso(j){const v=S.iso.view;closeKp();S.iso=JSON.parse(j);S.iso.view=v;if(!S.iso.runs)S.iso.runs={};loadEdges();save();applyView();renderIso();}
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),2200);}
 
 function nearestPt(w){
@@ -815,8 +881,8 @@ function analyze(){
   const adj=new Map();
   const add=(a,b)=>{if(!adj.has(a))adj.set(a,[]);adj.get(a).push(b);};
   for(const e of E){const [a,b]=e.split("|");add(a,b);add(b,a);}
-  const dir=(a,b)=>{const p=PK(a),q=PK(b);return [q[0]-p[0],q[1]-p[1]];};
-  const col=(k,x,y)=>{const d1=dir(k,x),d2=dir(k,y);return d1[0]===-d2[0]&&d1[1]===-d2[1];};
+  const col=(k,x,y)=>{const d1=dir3k(k,x),d2=dir3k(k,y);return d1[0]===-d2[0]&&d1[1]===-d2[1]&&d1[2]===-d2[2];};
+  const bend=(k,x,y)=>{const c=cos3(dir3k(k,x),dir3k(k,y));return Math.abs(c)<0.01?"elbow":Math.abs(c+Math.SQRT1_2)<0.01?"elbow45":"err";};
   const partAt=k=>{const pt=S.iso.parts[k];if(!pt)return null;const n=adj.get(k)||[];
     if(pt.t==="flange")return n.length===1?pt:null;
     if((pt.t==="valve"||pt.t==="flex")&&n.length===1)return pt; // 端部のバルブ・フレキ
@@ -827,8 +893,9 @@ function analyze(){
     if(!isNode(k))continue;
     const pt=partAt(k);let type;
     if(n.length===1)type=pt?(pt.t==="flange"?"flange":"pend"):"open";
-    else if(n.length===2)type=pt?pt.t:((S.iso.opt[k]||{}).tee?"tee":"elbow");
-    else if(n.length===3)type=[[0,1],[0,2],[1,2]].some(([x,y])=>col(k,n[x],n[y]))?"tee":"err";
+    else if(n.length===2){const b=bend(k,n[0],n[1]);type=pt?pt.t:(b==="elbow"&&(S.iso.opt[k]||{}).tee?"tee":b);}
+    else if(n.length===3){const pr=[[0,1,2],[0,2,1],[1,2,0]].find(([x,y])=>col(k,n[x],n[y]));
+      type=pr&&Math.abs(cos3(dir3k(k,n[pr[0]]),dir3k(k,n[pr[2]])))<0.01?"tee":"err";}
     else type="err";
     nodes.set(k,{k,type,nb:n,pieces:[]});
   }
@@ -871,6 +938,11 @@ function computeRuns(){
     const o={from:rev?run.b:run.a,to:rev?run.a:run.b,pieces:rev?[...run.pieces].reverse():run.pieces,parts:rev?[...run.parts].reverse():run.parts};
     run.o=o;
     let total=num(d.total);
+    run.diag=D.has(ek(run.pieces[0].pts[0],run.pieces[0].pts[1]));
+    if(run.diag){run.offset=total;total=total===null?null:total*Math.SQRT2; // 45°：入力は芯々のズレX
+      const p0=o.pieces[0],pts=p0.a===o.from?p0.pts:[...p0.pts].reverse(),v=dir3k(pts[0],pts[1]);
+      run.swing=swingOf(o.from,p0,v);
+      run.dirTxt=run.swing&&run.swing.rel?run.swing.rel+"へ振り":dirName(v)+"へ";} // 起点から進行方向に向かっての振り
     if(total===null&&!run.parts.length)total=num((S.iso.pieces[run.pieces[0].key]||{}).len); // 旧データ
     run.total=total;
     let s=d.size||S.iso.size;
@@ -915,13 +987,13 @@ function endDed(k,p,acc){
       const f=add("控え",need("F",sz,"フランジ控え"));
       const pk=(nd.type==="fpair"||(nd.type==="pend"&&S.iso.parts[k].noPack))?0:packV(); // バルブ・フレキとの間にパッキンが入る
       return f+add("パッキン",pk);}
-    case "elbow":case "tee":{
+    case "elbow":case "tee":case "elbow45":{
       const mx=String(Math.max(...nd.pieces.map(q=>+psz(q))));
       if(TH){ // 白管：継手の芯先寸法 − ねじ込み長さ（口径が変わる所は大きい方の継手として扱う）
-        const nm=nd.type==="tee"?"チーズ":"エルボ";
-        return add(nm+(mx!==sz?`(${mx}A)`:""),need(nd.type==="tee"?"T":"L",mx,nm+"寸法"))+screwIn();}
+        const nm=nd.type==="tee"?"チーズ":nd.type==="elbow45"?"45°エルボ":"エルボ";
+        return add(nm+(mx!==sz?`(${mx}A)`:""),need(nd.type==="tee"?"T":nd.type==="elbow45"?"L45":"L",mx,nm+"寸法"))+screwIn();}
       const short=nd.type==="elbow"&&(S.iso.opt[k]||{}).short;
-      const c=nd.type==="tee"?"T":(short?"SR":"LR"),nm=nd.type==="tee"?"チーズ":(short?"ショートエルボ":"エルボ");
+      const c=nd.type==="tee"?"T":nd.type==="elbow45"?"L45":(short?"SR":"LR"),nm=nd.type==="tee"?"チーズ":nd.type==="elbow45"?"45°エルボ":(short?"ショートエルボ":"エルボ");
       let v=add(nm+(mx!==sz?`(${mx}A)`:""),need(c,mx,nm+"寸法"));v+=add("ギャップ",gap);
       if(+sz<+mx){v+=add("レジューサ",need("R",mx,"レジューサ長"));v+=add("ギャップ",gap);}
       return v;}
@@ -1042,6 +1114,11 @@ function renderIso(){
   const SEP=[" / ","sep"];
   const selRun=sel?G.rmap.get(sel.key):null;
   const selPart=sel&&sel.field&&sel.field.includes(":")?sel.field.split(":")[1]:null;
+  for(const run of G.runs){if(!run.diag)continue; // 45°区間：どの面で振れているかを三角のハッチで示す
+    const A=run.pieces[0].pts[0],Bk=run.pieces[run.pieces.length-1].pts.slice(-1)[0];
+    const p0=PK(run.pieces[0].pts[0]),p1=PK(run.pieces[0].pts[1]),dg=DIAG[(p1[0]-p0[0])+","+(p1[1]-p0[1])];if(!dg)continue;
+    const n=run.pieces.reduce((a,p)=>a+p.pts.length-1,0),[ai,aj]=PK(A),C=KK(ai+dg.u[0][0]*n,aj+dg.u[0][1]*n);
+    pipes.push(poly([ppos(A),ppos(C),ppos(Bk)],"hatch"));}
   for(const p of G.pieces){
     const a=ppos(p.a),b=ppos(p.b);
     if(selRun&&p.run===selRun)pipes.push(ln(a,b,"selpipe"));
@@ -1064,9 +1141,9 @@ function renderIso(){
     if(!o.parts.length){
       // 部品なし：配管長＝全長
       const p=o.pieces[0],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,L=run.total;
-      const blue0=L===null?["?","muted"]:[String(r1(L)),"blue total"];
+      const blue0=run.diag?(run.offset===null||run.offset===undefined?["ズレ?","muted"]:["ズレ"+r1(run.offset),"blue total"]):(L===null?["?","muted"]:[String(r1(L)),"blue total"]);
       // 凡例の順：口径 / 全長 / カット長（1組で動かす）
-      const rr=red(p),M0=MR(A,B,n),set=[[psz(p)+"A","szb"],SEP,blue0,...(rr?[SEP,rr]:[])];
+      const rr=red(p),M0=MR(A,B,n),set=[[psz(p)+"A","szb"],SEP,blue0,...(rr?[SEP,rr]:[]),...(run.diag?[["\n"],["45° "+run.dirTxt,"dimcap"]]:[])];
       if(n.vert)lbl(mx+12,my+4,set,"start",u,M0);
       else lbl(mx+n.x*12,my+n.y*12,set,"middle",u,M0);
       tag({run:run.key,f:"total"});
@@ -1116,10 +1193,12 @@ function renderIso(){
       case "flange":{marks.push(flTick(c,d,0),flTick(c,d,4));
         if(packV()){const f={x:c.x-d.x*2.2,y:c.y-d.y*2.2};marks.push(poly([at(f,d,-1.6,-7),at(f,d,1.6,-7),at(f,d,1.6,7),at(f,d,-1.6,7)],"m-pack"));}
         break;}
-      case "elbow":case "tee":{
+      case "elbow":case "tee":case "elbow45":{
         const mxs=Math.max(...ps.map(q=>+psz(q)));
         for(const q of ps)if(+psz(q)<mxs){const dq=unitDir(nd.k,q);marks.push(redShape({x:c.x+dq.x*16,y:c.y+dq.y*16},{x:-dq.x,y:-dq.y}));}
-        if(nd.type==="elbow"){
+        if(nd.type==="elbow45"){marks.push(dot(c,3.5,"m-elb"));const d2=unitDir(nd.k,ps[1]||ps[0]);let ox=-(d.x+d2.x),oy=-(d.y+d2.y);const l=Math.hypot(ox,oy)||1;
+          marks.push(tx(c.x+ox/l*13,c.y+oy/l*13+4,[["45°","sm"]]));}
+        else if(nd.type==="elbow"){
           marks.push(dot(c,3.5,"m-elb"));
           if((S.iso.opt[nd.k]||{}).short){const d2=unitDir(nd.k,ps[1]||ps[0]);let ox=-(d.x+d2.x),oy=-(d.y+d2.y);const l=Math.hypot(ox,oy)||1;
             marks.push(tx(c.x+ox/l*12,c.y+oy/l*12+4,[["S","sm"]]));}
@@ -1247,7 +1326,7 @@ function jointCounts(){
     if(!nd.pieces.length)continue;
     const szs=nd.pieces.map(q=>+psz(q)),mx=String(Math.max(...szs)),pt=S.iso.parts[nd.k];
     switch(nd.type){
-      case "elbow":J(mx,2,2);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break; // 口径が変わる所はレジューサも数える
+      case "elbow":case "elbow45":J(mx,2,2);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break; // 口径が変わる所はレジューサも数える
       case "tee":J(mx,3,3);for(const q of nd.pieces)if(+psz(q)<+mx)J(mx,2,2);break;
       case "reducer":J(mx,2,2);break;
       case "flange":J(psz(nd.pieces[0]),2,1);break;                 // 端フランジ
@@ -1274,7 +1353,7 @@ function renderSum(){
     h+=`<table class="sumtbl"><tr><th>口径</th><th>本数</th><th>カット合計</th><th>溶接</th><th>ねじ込み</th></tr>`+
       ks.map(s=>`<tr><td>${s}A</td><td>${tot[s]?tot[s].n+"本":"−"}</td><td>${tot[s]?r1(tot[s].sum)+" mm":"−"}</td><td>${W[s]||0}箇所</td><td>${N[s]||0}箇所</td></tr>`).join("")+
       `</table>`+
-      `<p class="note">数え方：エルボ2・チーズ3・レジューサ2、SOPフランジは内外で2（フランジ2枚は4）。白管はねじ込み継手を同じ数で、ねじ込みフランジ・ネジ接続の部品は1箇所として数えます。</p>`;
+      `<p class="note sumnote">数え方：エルボ2・チーズ3・レジューサ2、SOPフランジは内外で2（フランジ2枚は4）。白管はねじ込み継手を同じ数で、ねじ込みフランジ・ネジ接続の部品は1箇所として数えます。</p>`;
   }
   if(miss)h+=`<p class="err">寸法が足りない配管が ${miss} 本あります（寸法モードでタップして入力）</p>`;
   for(const e of errs)h+=`<p class="err">⚠ ${e}</p>`;
@@ -1285,6 +1364,7 @@ function renderSum(){
 const HINT={
   draw:"グリッドの線を指でなぞると配管になります。曲がり角には自動でエルボが入ります。描いた配管をタップすると寸法を入れられます。",
   erase:"消したい配管を指でなぞってください。",
+  d45:"グリッドの点から点へ斜めになぞると45°の配管になります。振れる面（水平・縦）はなぞった向きで決まり、薄い三角のハッチで表示します。曲がり角には45°エルボが自動で入ります。寸法は芯々のズレXを入れます。",
   dim:"配管をタップすると、下に寸法の入力欄とテンキーが出ます。バルブ・フレキがある直管は、全長と起点からの位置で入れます。",
   pan:"1本指で図を動かします。",
   tee:"チーズにしたいエルボをタップします（もう一度タップでエルボに戻ります）。分岐を描き足すと自動でチーズになります。",
@@ -1317,7 +1397,7 @@ svg.addEventListener("pointerdown",e=>{
   if(ptrs.size===2){endStroke();const [a,b]=[...ptrs.values()];
     gest={t:"pinch",d0:Math.hypot(a.x-b.x,a.y-b.y)||1,m0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},v0:{...V()}};return;}
   if(ptrs.size>2)return;
-  if(isoMode==="draw"||isoMode==="erase"){const pu=pushUndo();gest={t:"stroke",cur:nearestPt(toWorld(p)).k,changed:false,sx:p.x,sy:p.y,pu};}
+  if(isoMode==="draw"||isoMode==="erase"||isoMode==="d45"){const pu=pushUndo();gest={t:"stroke",cur:nearestPt(toWorld(p)).k,changed:false,sx:p.x,sy:p.y,pu};}
   else gest={t:"tap",sx:p.x,sy:p.y,v0:{...V()},moved:false};
 });
 svg.addEventListener("pointermove",e=>{
@@ -1327,7 +1407,9 @@ svg.addEventListener("pointermove",e=>{
     const d=Math.hypot(a.x-b.x,a.y-b.y),m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},k=clamp(gest.v0.k*d/gest.d0,.25,4);
     const wx=(gest.m0.x-gest.v0.x)/gest.v0.k,wy=(gest.m0.y-gest.v0.y)/gest.v0.k;
     S.iso.view={x:m.x-wx*k,y:m.y-wy*k,k};applyView();return;}
-  if(gest.t==="stroke"){const n=nearestPt(toWorld(p));if(n.d<GS*0.38&&n.k!==gest.cur)stepTo(n.k);return;}
+  if(gest.t==="stroke"){const w=toWorld(p);
+    if(isoMode==="erase"){eraseNear(w);return;}
+    const n=nearestPt(w);if(n.d<GS*0.38&&n.k!==gest.cur)stepTo(n.k);return;}
   if(gest.t==="tap"){const dx=p.x-gest.sx,dy=p.y-gest.sy;
     if(!gest.moved&&Math.hypot(dx,dy)>8)gest.moved=true;
     if(gest.moved){S.iso.view={...gest.v0,x:gest.v0.x+dx,y:gest.v0.y+dy};applyView();}}
@@ -1336,7 +1418,7 @@ function endPtr(e){
   if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
   if(!gest)return;
   if(gest.t==="stroke"){const g=gest;endStroke();
-    if(!g.changed&&isoMode==="draw"&&e.type==="pointerup"){const p=local(e);if(Math.hypot(p.x-g.sx,p.y-g.sy)<10)tapEdit(toWorld(p));}}
+    if(!g.changed&&(isoMode==="draw"||isoMode==="d45")&&e.type==="pointerup"){const p=local(e);if(Math.hypot(p.x-g.sx,p.y-g.sy)<10)tapEdit(toWorld(p));}}
   else if(gest.t==="tap"){const g=gest;gest=null;if(!g.moved&&e.type==="pointerup")isoTap(toWorld(local(e)));else save();}
   else if(gest.t==="pinch"&&ptrs.size===0){gest=null;save();}
 }
@@ -1349,16 +1431,20 @@ function endStroke(){
   gest=null;
 }
 function stepTo(t){
-  const tp=ppos(t);let g=0;
+  const tp=ppos(t),dg=isoMode==="d45",steps=dg?Object.keys(DIAG).map(k=>k.split(",").map(Number)):NB;let g=0;
   while(gest.cur!==t&&g++<80){
-    const [ci,cj]=PK(gest.cur);let best=null,bd=1e9;
-    for(const [di,dj] of NB){const nk=KK(ci+di,cj+dj),q=ppos(nk),d=Math.hypot(q.x-tp.x,q.y-tp.y);if(d<bd){bd=d;best=nk;}}
+    const [ci,cj]=PK(gest.cur),cp=ppos(gest.cur),d0=Math.hypot(cp.x-tp.x,cp.y-tp.y);let best=null,bd=1e9;
+    for(const [di,dj] of steps){const nk=KK(ci+di,cj+dj),q=ppos(nk),d=Math.hypot(q.x-tp.x,q.y-tp.y);if(d<bd){bd=d;best=nk;}}
+    if(bd>=d0)break; // これ以上近づけない（45°の向きに合わない）
     const e=ek(gest.cur,best);
-    if(isoMode==="draw"){if(!E.has(e)){E.add(e);gest.changed=true;}}
-    else if(E.has(e)){E.delete(e);gest.changed=true;}
+    if(!E.has(e)){E.add(e);if(dg)D.add(e);else D.delete(e);gest.changed=true;}
     gest.cur=best;
   }
   if(gest.changed){syncEdges();renderIso();}
+}
+function eraseNear(w){ // 指の近くの配管（45°も含む）を消す
+  let ch=false;for(const e of [...E]){const [a,b]=e.split("|");if(segDist(w,ppos(a),ppos(b))<GS*0.22){E.delete(e);D.delete(e);ch=true;}}
+  if(ch){gest.changed=true;syncEdges();renderIso();}
 }
 function segDist(w,a,b){const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;let t=l2?((w.x-a.x)*dx+(w.y-a.y)*dy)/l2:0;t=clamp(t,0,1);return Math.hypot(w.x-(a.x+dx*t),w.y-(a.y+dy*t));}
 function nearestPiece(w,m){let best=null,bd=m;for(const p of G.pieces){const d=segDist(w,ppos(p.a),ppos(p.b));if(d<bd){bd=d;best=p;}}return best;}
@@ -1428,6 +1514,7 @@ function renderFbox(){
   const run=isIso()&&sel?G.rmap.get(sel.key):null;
   if(!run){fbox.hidden=true;return;}
   const o=run.o,many=o.pieces.length>1;let h=`<div class="fh">計算式（カット長）</div>`;
+  if(run.diag)h+=`<div class="fl"><b>45°・起点から${run.dirTxt}</b>${run.offset!==null&&run.offset!==undefined?`　斜めの芯々 T ＝ ズレ${r1(run.offset)} × √2 ＝ <span class="c-blue">${r1(run.total)}</span>`:""}</div>`;
   o.pieces.forEach((p,i)=>{
     const nm=many?"配管"+CIR[i]:"配管";
     if(p.direct){h+=`<div class="fl">${nm}：直結（パッキン${r1(packV())}のみ・配管なし）</div>`;return;}
@@ -1454,21 +1541,21 @@ window.addEventListener("resize",()=>positionFbox());
 function curRun(){return sel?G.rmap.get(sel.key):null;}
 function fieldsOf(run){
   const o=run.o,refA=REF[G.nodes.get(o.from).type],refB=REF[G.nodes.get(o.to).type];
-  const fs=[run.autoTotal?{id:"total",label:`配管全長（直結で自動）`,cls:"total",auto:true,get:()=>run.total===null?"":r1(run.total),set:()=>{}}:{id:"total",label:`配管全長（${refA}〜${refB}）`,cls:"total",
+  const fs=[run.autoTotal?{id:"total",label:`配管全長（直結で自動）`,cls:"total",auto:true,get:()=>run.total===null?"":r1(run.total),set:()=>{}}:{id:"total",label:run.diag?`芯々のズレ X（45° ${run.dirTxt}・斜め${run.total===null?"?":r1(run.total)}）`:`配管全長（${refA}〜${refB}）`,cls:"total",
     get:()=>{const d=rdat(run);return d.total??(run.total!==null&&!o.parts.length?run.total:"");},
     set:v=>{rdatW(run).total=v;},chip:"run"}];
   for(const e of [o.from,o.to])if(G.nodes.get(e).type==="pend"){const pt=S.iso.parts[e];
-    fs.push({id:"len:"+e,label:`${PART_NAME[pt.t]}（端部） 面間`,cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:e});}
+    fs.push({id:"len:"+e,label:`${PART_NAME[pt.t]}（端部） 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:e});}
   o.parts.forEach((k,i)=>{
     const pt=S.iso.parts[k],nm=PART_NAME[pt.t]+CIR[i];
     const getPos=()=>((rdat(run).pos)||{})[k]??"",setPos=v=>{const d=rdatW(run);(d.pos=d.pos||{})[k]=v;};
     if(o.pieces[i].direct){
-      fs.push({id:"pos:"+k,label:`起点→${nm}（直結で自動）`,cls:"pos",auto:true,get:()=>run.pos[i]===null?"":r1(run.pos[i]),set:()=>{},part:k});
-      if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
-    }else if(pt.t==="reducer")fs.push({id:"pos:"+k,label:`起点→${nm}（中心）`,cls:"pos",get:getPos,set:setPos,chip:"red",idx:i,part:k});
+      fs.push({id:"pos:"+k,label:`起点→${nm}（直結で自動）`,short:"起点から（直結で自動）",cls:"pos",auto:true,get:()=>run.pos[i]===null?"":r1(run.pos[i]),set:()=>{},part:k});
+      if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
+    }else if(pt.t==="reducer")fs.push({id:"pos:"+k,label:`起点→${nm}（中心）`,short:"起点から（中心）",cls:"pos",get:getPos,set:setPos,chip:"red",idx:i,part:k});
     else{
-      fs.push({id:"pos:"+k,label:`起点→${nm}`,cls:"pos",get:getPos,set:setPos,part:k});
-      if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
+      fs.push({id:"pos:"+k,label:`起点→${nm}`,short:"起点から",cls:"pos",get:getPos,set:setPos,part:k});
+      if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
     }
   });
   return fs;
@@ -1480,33 +1567,40 @@ function refreshPanel(loadValue){
   const fs=fieldsOf(run);let f=fs.find(x=>x.id===sel.field)||fs[0];
   if(f.auto)f=fs[fs.indexOf(f)+1]||fs[0];
   sel.field=f.id;
-  const fr=x=>{const v=x.get();
-    if(x.auto)return `<div class="row auto ${x.cls}"><span>${x.label}</span><b class="c-blue">${v===""?"?":v}</b></div>`;
-    return `<button type="button" class="row ${x.cls}${x.id===f.id?" on":""}" data-f="${x.id}"><span>${x.label}</span><b>${v===""||v===null||v===undefined?"—":v}</b></button>`;};
-  const head=(k,label,isEnd)=>{const pt=S.iso.parts[k],vf=pt.t==="valve"||pt.t==="flex";
-    return `<div class="parthead"><span>▼ ${label}</span><span class="ptools">`+
-      (vf?`<button type="button" class="chk${isEnd?" on":""}" data-end="${k}">${isEnd?"☑":"☐"} 端部</button>`:"")+
-      (vf&&isEnd&&pt.conn!=="screw"?`<button type="button" class="chk${pt.noPack?"":" on"}" data-nopack="${k}">${pt.noPack?"☐":"☑"} パッキンを引く</button>`:"")+
-      (vf?`<span class="conn"><button type="button" data-conn="flange" data-k="${k}" class="${(pt.conn||"flange")==="flange"?"on":""}">フランジ</button><button type="button" data-conn="screw" data-k="${k}" class="${pt.conn==="screw"?"on":""}">ネジ</button></span>`:"")+`</span></div>`;};
-  const endPart=e=>G.nodes.get(e).type==="pend"?head(e,PART_NAME[S.iso.parts[e].t]+"（端部）",true)+fs.filter(x=>x.part===e).map(fr).join(""):"";
-  let h=fr(fs[0]);
-  h+=endPart(run.o.from);
-  if(run.o.parts.length||run.o.pieces.some(q=>q.direct)){
-    run.o.pieces.forEach((p,i)=>{
-      const r=pieceCalc(p),last=i===run.o.pieces.length-1;
-      const canD=canDirect(p.a,p.b);
-      const dbtn=canD?`<button type="button" class="chk${p.direct?" on":""}" data-direct="${p.key}">${p.direct?"☑":"☐"} 直結</button>`:"";
-      if(p.direct)h+=`<div class="row auto"><span>直結（パッキン${r1(packV())}のみ）</span>${dbtn}</div>`;
-      else h+=`<div class="row auto"><span>配管${CIR[i]}${i===0?"（起点側）":last?"（終点側）":""}</span>${dbtn}<b class="c-blue">${p.len===null?"?":r1(p.len)}</b><em class="c-red">${r.cut!==undefined?"カット "+r.cut:""}</em></div>`;
-      if(last)return;
-      const k=run.o.parts[i],pt=S.iso.parts[k];
-      h+=head(k,`${PART_NAME[pt.t]}${CIR[i]}${pt.t==="fpair"?"（2枚）":""}`,false);
-      h+=fs.filter(x=>x.part===k).map(fr).join("");
-    });
-  }
-  h+=endPart(run.o.to);
+  const val=x=>{const v=x.get();return v===""||v===null||v===undefined?"—":v;};
+  const cell=(x,lab)=>x.auto?`<div class="cell auto"><span>${lab||x.short||x.label}</span><b>${val(x)}</b></div>`
+    :`<button type="button" class="cell${x.id===f.id?" on":""}" data-f="${x.id}"><span>${lab||x.short||x.label}</span><b>${val(x)}</b></button>`;
+  const ac=(lab,v,cls)=>`<div class="cell auto${cls?" "+cls:""}"><span>${lab}</span><b>${v}</b></div>`;
+  const many=run.o.pieces.length>1;
+  // 配管の長さとカット（2マス）。直結なら1つにまとめる
+  const pipeCells=(p,i)=>{if(!p)return "";if(p.direct)return ac("直結",`P${r1(packV())}`,"span2");
+    const r=pieceCalc(p);return ac("配管"+(many?CIR[i]:""),p.len===null?"?":r1(p.len))+ac("カット",r.cut!==undefined?r.cut:r.error?"⚠":"—","cut");};
+  const dirBtn=p=>p&&canDirect(p.a,p.b)?`<button type="button" class="chk${p.direct?" on":""}" data-direct="${p.key}" title="次の部品と直結">⇔</button>`:"";
+  const ptools=(k,isEnd)=>{const pt=S.iso.parts[k],vf=pt.t==="valve"||pt.t==="flex";if(!vf)return "";
+    return `<button type="button" class="chk${isEnd?" on":""}" data-end="${k}" title="端部">端</button>`+
+      (isEnd&&pt.conn!=="screw"?`<button type="button" class="chk${pt.noPack?"":" on"}" data-nopack="${k}" title="パッキンを引く">P</button>`:"")+
+      `<span class="conn"><button type="button" data-conn="flange" data-k="${k}" class="${(pt.conn||"flange")==="flange"?"on":""}" title="フランジ接続">F</button><button type="button" data-conn="screw" data-k="${k}" class="${pt.conn==="screw"?"on":""}" title="ネジ接続">S</button></span>`;};
+  const SYM={valve:"⋈",flex:"〰",fpair:"‖",reducer:"▷"};
+  const box=(cls,head,body)=>`<div class="pbox ${cls}">${head}${body}</div>`;
+  const head=(name,tools)=>`<div class="phead"><span>${name}</span><span class="ptools">${tools}</span></div>`;
+  const o0=run.o,t0=fs[0],partCells=k=>fs.filter(x=>x.part===k).map(x=>cell(x,x.short&&x.short.startsWith("起点")?(x.auto?"起点(自動)":x.short.includes("中心")?"起点(中心)":"起点"):x.short));
+  // 1行目：全長・起点側の配管・カット
+  const tLab=run.diag?"ズレX":run.autoTotal?"全長(自動)":"全長 "+t0.label.replace(/^配管全長（|）$/g,"");
+  const firstTools=G.nodes.get(o0.from).type==="pend"?"":dirBtn(o0.pieces[0]&&o0.parts.length?null:null);
+  let swingRow="";
+  if(run.diag)swingRow=run.swing?`<div class="swing"><span>振り</span>${run.swing.opts.map(op=>`<button type="button" class="chk${op.v.join()===run.swing.s.join()?" on":""}" data-swing="${op.v.join(",")}">${op.lab}</button>`).join("")}</div>`
+    :`<div class="swing"><span class="err">起点側が45°エルボではありません。⇄起点で入れ替えてください</span></div>`;
+  let h=box("first","",`<div class="cells c3">${cell(t0,tLab)}${pipeCells(o0.pieces[0],0)}</div>${swingRow}`);
+  // 起点側の端部
+  if(G.nodes.get(o0.from).type==="pend"){const e=o0.from,pt=S.iso.parts[e];
+    h+=box(sel.field==="len:"+e?"cur":"",head(`${SYM[pt.t]}${PART_NAME[pt.t]}(端)`,ptools(e,true)+dirBtn(o0.pieces[0])),`<div class="cells c3">${partCells(e).join("")}</div>`);}
+  o0.parts.forEach((k,i)=>{const pt=S.iso.parts[k],nx=o0.pieces[i+1],pc=partCells(k);
+    const nm=`${SYM[pt.t]||""}${PART_NAME[pt.t]}${CIR[i]}`;
+    h+=box(sel.field&&sel.field.endsWith(":"+k)?"cur":"",head(nm,ptools(k,false)+dirBtn(nx)),`<div class="cells c${pc.length+2}">${pc.join("")}${pipeCells(nx,i+1)}</div>`);});
+  if(G.nodes.get(o0.to).type==="pend"){const e=o0.to,pt=S.iso.parts[e];
+    h+=box(sel.field==="len:"+e?"cur":"",head(`${SYM[pt.t]}${PART_NAME[pt.t]}(端)`,ptools(e,true)),`<div class="cells c3">${partCells(e).join("")}</div>`);}
   rowBox.innerHTML=h;
-  const onRow=rowBox.querySelector(".on");if(onRow&&!onRow.classList.contains("total")){const top=onRow.offsetTop-rowBox.offsetTop,hh=rowBox.clientHeight;if(top<rowBox.scrollTop+44||top+onRow.offsetHeight>rowBox.scrollTop+hh)rowBox.scrollTop=Math.max(0,top-44);}
+  const onRow=rowBox.querySelector(".on");if(onRow&&!onRow.closest(".first")){const top=onRow.offsetTop-rowBox.offsetTop,hh=rowBox.clientHeight;if(top<rowBox.scrollTop+44||top+onRow.offsetHeight>rowBox.scrollTop+hh)rowBox.scrollTop=Math.max(0,top-44);}
   if(loadValue){isoInput.value=f.get()??"";fresh=true;}
   // 口径
   const o=run.o;
@@ -1514,7 +1608,7 @@ function refreshPanel(loadValue){
   if(f.chip==="run")cur=psz(o.pieces[0]);else if(f.chip==="red")cur=psz(o.pieces[f.idx+1]);
   chipBox.style.display=cur?"":"none";
   if(cur)chipBox.innerHTML=`<span class="chipcap">${f.chip==="red"?"変更後":"口径"}</span>`+SIZES.map(s=>`<button type="button" data-sz="${s}" class="${s===cur?"on":""}">${s}A</button>`).join("");
-  flipBtn.style.display=o.parts.length?"":"none";
+  flipBtn.style.display=(o.parts.length||run.diag)?"":"none";
   // 割り出し結果
   if(o.parts.length||o.pieces.some(q=>q.direct)){const er=o.pieces.map(pieceCalc).find(r=>r.error);calcLine.innerHTML=er?`<span class="err">${er.error}</span>`+(!run.autoTotal&&f.id!=="total"?` <button type="button" class="chk" data-goto="total">全長を直す</button>`:""):"";}
   else{const r=pieceCalc(o.pieces[0]);calcLine.innerHTML=r.cut!==undefined?`カット <b class="c-red">${r.cut}</b>`:(r.error?`<span class="err">${r.error}</span>`:"");}
@@ -1525,6 +1619,8 @@ calcLine.addEventListener("click",e=>{
   sel.field=g.dataset.goto;renderIso();refreshPanel(true);
 });
 rowBox.addEventListener("click",e=>{
+  const sw=e.target.closest("button[data-swing]");
+  if(sw){setSwing(curRun(),sw.dataset.swing.split(",").map(Number));return;}
   const dd=e.target.closest("button[data-direct]");
   if(dd){pushUndo();const pd=S.iso.pieces[dd.dataset.direct]=S.iso.pieces[dd.dataset.direct]||{};pd.direct=!pd.direct;
     save();renderIso();refreshPanel(false);toast(pd.direct?"直結にしました（パッキンだけを挟みます）":"直結を外しました");return;}
@@ -1548,7 +1644,7 @@ chipBox.addEventListener("click",e=>{
 });
 flipBtn.addEventListener("click",()=>{
   const run=curRun();if(!run)return;
-  const d=rdatW(run),T=num(d.total);
+  const d=rdatW(run),T=num(d.total)===null?null:num(d.total)*(run.diag?Math.SQRT2:1);
   // 追い出し位置を反対側から測った値に換算する
   if(T!==null&&d.pos)for(const k of run.parts){const v=num(d.pos[k]);if(v===null)continue;
     const pt=S.iso.parts[k],sp=pt.t==="reducer"?0:pt.t==="fpair"?packV():num(pt.len);
@@ -1556,6 +1652,35 @@ flipBtn.addEventListener("click",()=>{
   d.from=run.o.from===run.a?run.b:run.a;
   save();renderIso();refreshPanel(true);toast("起点を反対側にしました（位置も換算済み）");
 });
+/* 45°区間の振りを変える：45°の線を引き直し、その先の図をまとめて平行移動する */
+function setSwing(run,sv){
+  if(!run||!run.swing)return;
+  const o=run.o,A=o.from,B=o.to,t=run.swing.t,v=[t[0]+sv[0],t[1]+sv[1],t[2]+sv[2]];
+  const key=Object.keys(DIAG).find(k=>DIAG[k].v.join()===v.join());if(!key)return toast("その向きには振れません");
+  if(sv.join()===run.swing.s.join())return;
+  const pts=[A];for(const p of o.pieces){const q=p.pts[0]===pts[pts.length-1]?p.pts:[...p.pts].reverse();pts.push(...q.slice(1));}
+  const n=pts.length-1,[di,dj]=key.split(",").map(Number),[ai,aj]=PK(A),newPts=pts.map((_,j)=>KK(ai+di*j,aj+dj*j));
+  const [bi,bj]=PK(B),[ci,cj]=PK(newPts[n]),oi=ci-bi,oj=cj-bj;
+  const runE=new Set();for(let j=0;j<n;j++)runE.add(ek(pts[j],pts[j+1]));
+  const adj=new Map();for(const e of E){if(runE.has(e))continue;const [a,b]=e.split("|");for(const [x,y] of [[a,b],[b,a]]){if(!adj.has(x))adj.set(x,[]);adj.get(x).push(y);}}
+  const moved=new Set([B]),q=[B];
+  while(q.length){const u=q.shift();for(const w of adj.get(u)||[]){if(w===A)return toast("配管がつながって輪になっているため、振りを変えられません");if(!moved.has(w)){moved.add(w);q.push(w);}}}
+  const M=new Map();pts.forEach((p,j)=>{if(j>0&&j<n)M.set(p,newPts[j]);});
+  for(const p of moved){const [i,j]=PK(p);M.set(p,KK(i+oi,j+oj));}
+  const occ=new Set();for(const e of E){if(runE.has(e))continue;for(const p of e.split("|"))if(!M.has(p))occ.add(p);}
+  for(const nw of M.values())if(occ.has(nw))return toast("ほかの配管と重なるため、この向きには変えられません");
+  pushUndo();
+  const mp=k=>M.get(k)||k,mk=k=>{const [a,b]=k.split("|");return ek(mp(a),mp(b));},rm=(obj,fn)=>{const r={};for(const k in obj)r[fn(k)]=obj[k];return r;};
+  const E2=new Set(),D2=new Set();
+  for(const e of E){if(runE.has(e))continue;const ne=mk(e);E2.add(ne);if(D.has(e))D2.add(ne);}
+  for(let j=0;j<n;j++){const e=ek(newPts[j],newPts[j+1]);E2.add(e);D2.add(e);}
+  E=E2;D=D2;
+  S.iso.parts=rm(S.iso.parts,mp);S.iso.opt=rm(S.iso.opt,mp);S.iso.pieces=rm(S.iso.pieces,mk);
+  const runs={};for(const k in S.iso.runs){const d=S.iso.runs[k];if(d.from)d.from=mp(d.from);if(d.pos)d.pos=rm(d.pos,mp);runs[mk(k)]=d;}S.iso.runs=runs;
+  syncEdges();save();renderIso();
+  sel={kind:"run",key:mk(run.key),field:"total"};refreshPanel(false);
+  const nr=G.rmap.get(sel.key);toast("45°の振りを「"+(nr&&nr.swing?nr.swing.rel:"")+"」にしました");
+}
 /* 端部の切り替え：バルブ・フレキの先の配管を消して端にする／先に配管を2マス足して途中に戻す */
 function toggleEnd(k){
   const run=curRun();if(!run)return;
@@ -1655,7 +1780,7 @@ document.getElementById("redoBtn").onclick=()=>{
 document.getElementById("isoClear").onclick=async()=>{
   if(!E.size&&!Object.keys(S.iso.parts).length)return toast("消す図面がありません");
   if(!await askConfirm("【最終確認】図面をすべて消去します。配管・部品・入力した寸法がすべて消えます。本当に消しますか？","すべて消去する",true))return;
-  pushUndo();closeKp();sel=null;E.clear();S.iso.edges=[];S.iso.parts={};S.iso.opt={};S.iso.pieces={};S.iso.runs={};S.iso.showCut=false;save();renderIso();toast("図面を消去しました（↶戻すで元に戻せます）");
+  pushUndo();closeKp();sel=null;E.clear();D.clear();S.iso.edges=[];S.iso.diag=[];S.iso.parts={};S.iso.opt={};S.iso.pieces={};S.iso.runs={};S.iso.showCut=false;save();renderIso();toast("図面を消去しました（↶戻すで元に戻せます）");
 };
 const isoSize=document.getElementById("isoSize");
 isoSize.innerHTML=SIZES.map(s=>`<option value="${s}">${s}A</option>`).join("");
@@ -1667,6 +1792,11 @@ function initIso(){
   applyView();setIsoMode(isoMode);renderIso();
 }
 buildGrid();
+
+/* PROモード：説明書きを隠す（免責事項・コピーライトは残す） */
+function applyPro(){document.body.classList.toggle("pro",!!S.pro);const b=document.getElementById("proBtn");b.setAttribute("aria-pressed",!!S.pro);}
+document.getElementById("proBtn").onclick=()=>{S.pro=!S.pro;applyPro();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}toast(S.pro?"PROモード：説明を隠しました":"説明を表示します");};
+applyPro();
 
 /* 確認ダイアログ（ブラウザの confirm が使えない環境でも動くように画面内に出す） */
 function askConfirm(msg,ok,danger){return new Promise(res=>{
@@ -1786,7 +1916,7 @@ function applyImported(state,isoOnly){
     if(state.pack!==undefined)S.pack=state.pack;
   }else{S=fromSaved(state);}
   if(!S.iso.runs)S.iso.runs={};
-  E=new Set(S.iso.edges);sel=null;markSig();save();applyMode();if(isIso())setTimeout(fitView,50);
+  loadEdges();sel=null;markSig();save();applyMode();if(isIso())setTimeout(fitView,50);
 }
 document.getElementById("imJson").onclick=()=>document.getElementById("imFile").click();
 document.getElementById("imFile").addEventListener("change",async e=>{
@@ -1878,7 +2008,7 @@ function buildModel(){
   // 継手の位置（3次元）：直管の向きと長さを順にたどる
   const P3={},runInfo=new Map();
   const stepOf=(r,from)=>{const p=r.pieces.find(q=>q.a===from||q.b===from);const pts=p.a===from?p.pts:[...p.pts].reverse();
-    const a=PK(pts[0]),b=PK(pts[1]);return STEP3[(b[0]-a[0])+","+(b[1]-a[1])]||V3(1,0,0);};
+    const v=dir3k(pts[0],pts[1]),l=Math.hypot(...v)||1;return V3(v[0]/l,v[1]/l,v[2]/l);};
   for(const r of G.runs){const l=len(r);runInfo.set(r,l);}
   const adjR=new Map();for(const r of G.runs){for(const k of [r.a,r.b]){if(!adjR.has(k))adjR.set(k,[]);adjR.get(k).push(r);}}
   for(const r0 of G.runs){
@@ -1889,6 +2019,7 @@ function buildModel(){
   }
   const els=[],dims=[];
   const fitCE=(nd)=>{const mx=String(Math.max(...nd.pieces.map(q=>+psz(q))));
+    if(nd.type==="elbow45")return {R:nv(TB,"L45",mx)||22,mx};
     if(TH)return {R:nv(TB,nd.type==="tee"?"T":"L",mx)||30,mx};
     const short=nd.type==="elbow"&&(S.iso.opt[nd.k]||{}).short;return {R:nv(TB,nd.type==="tee"?"T":(short?"SR":"LR"),mx)||38,mx};};
   const kae=s=>nv(TB,"F",s)||5,pk=packV();
@@ -1897,7 +2028,7 @@ function buildModel(){
     const {L,unk}=runInfo.get(r);if(L<=0)continue;
     const dir=vmul(vadd(B0,vmul(A0,-1)),1/L),at3=s=>vadd(A0,vmul(dir,s));
     const sz0=psz(o.pieces[0]),szs=[...new Set(o.pieces.map(psz))];
-    dims.push({a:A0,b:B0,dir,text:unk?`寸法不明 約${L}`:`${szs.map(x=>x+"A").join("→")} ${r1(L)}`,unk,run:true});
+    dims.push({a:A0,b:B0,dir,text:unk?`寸法不明 約${L}`:`${szs.map(x=>x+"A").join("→")} ${r.diag&&r.offset?"ズレ"+r1(r.offset)+" 斜め"+r1(L)+"（45° "+r.dirTxt+"）":r1(L)}`,unk,run:true});
     // 部品の位置（不明なら描いた位置から割り出す）
     const latIdx=k=>{let n=0;for(const p of o.pieces){const pts=p.pts[0]===(o.pieces.indexOf(p)===0?o.from:null)?p.pts:p.pts;}return 0;};
     const tot=gl(r);let acc=0;const latPos={};
@@ -1910,7 +2041,7 @@ function buildModel(){
       switch(nd.type){
         case "open":return S0(0);
         case "flange":{els.push({t:"flange",c:at3(S0(0)),ax:vmul(dir,sgn),th:FL_T[sz]||14,od:FL_OD[sz]||120});return S0(kae(sz));}
-        case "elbow":case "tee":return S0(fitCE(nd).R);
+        case "elbow":case "tee":case "elbow45":return S0(fitCE(nd).R);
         case "pend":{const pt=S.iso.parts[node],span=num(pt.len)||150,scr=pt.conn==="screw";
           els.push({t:pt.t,a:at3(S0(0)),b:at3(S0(span)),od:SGP_OD[sz],span,label:"面間 "+(num(pt.len)===null?"?":r1(span))});
           if(scr)return S0(span);
@@ -1953,9 +2084,9 @@ function buildModel(){
   }
   // 継手（エルボ・チーズ）
   for(const nd of G.nodes.values()){
-    if(nd.type!=="elbow"&&nd.type!=="tee")continue;const c=P3[nd.k];if(!c)continue;
+    if(nd.type!=="elbow"&&nd.type!=="tee"&&nd.type!=="elbow45")continue;const c=P3[nd.k];if(!c)continue;
     const {R,mx}=fitCE(nd),legs=(adjR.get(nd.k)||[]).map(r=>stepOf(r,nd.k));
-    els.push({t:nd.type,c,legs,R,od:SGP_OD[mx]||30,thread:TH});
+    els.push({t:nd.type==="tee"?"tee":"elbow",c,legs,R,od:SGP_OD[mx]||30,thread:TH});
   }
   return {els,dims,P3,unknown:dims.some(d=>d.unk)};
 }
@@ -2011,12 +2142,13 @@ function makeDXF(){
         if(!v.ex){ // アイソメ：継手の両端（芯から芯先寸法の位置）に横線
           for(const d of e.legs){const q=P(vadd(e.c,vmul(d,e.R))),c0=P(e.c),u=u2(c0,q),n={x:-u.y,y:u.x};L("FIT",off(q,n,TXH*0.6),off(q,n,-TXH*0.6));}
           continue;}
-        const inP=e.legs.filter(d=>!along(d)),c=P(e.c);
-        if(e.t==="elbow"&&inP.length===2&&!e.thread){ // 溶接エルボ：外形は円弧
-          const [d1,d2]=inP,cc=P(vadd(e.c,vmul(vadd(d1,d2),e.R))),s1=P(vadd(e.c,vmul(d1,e.R))),s2=P(vadd(e.c,vmul(d2,e.R)));
+        const inP=e.legs.filter(d=>!along(d)),c=P(e.c),flat=e.legs.every(d=>Math.abs(vdot(d,v.vd))<0.05);
+        if(e.t==="elbow"&&e.legs.length===2&&flat&&!e.thread){ // 溶接エルボ（90°・45°）：外形は円弧
+          const [d1,d2]=e.legs,ph=Math.acos(clamp(vdot(d1,d2),-1,1)),bis=vadd(d1,d2),bl=Math.hypot(bis.x,bis.y,bis.z)||1;
+          const Rb=e.R*Math.tan(ph/2),cc=P(vadd(e.c,vmul(bis,(e.R/Math.cos(ph/2))/bl))),s1=P(vadd(e.c,vmul(d1,e.R))),s2=P(vadd(e.c,vmul(d2,e.R)));e.Rb=Rb;
           let a1=Math.atan2(s1.y-cc.y,s1.x-cc.x)*180/Math.PI,a2=Math.atan2(s2.y-cc.y,s2.x-cc.x)*180/Math.PI;
           if(((a2-a1)%360+360)%360>180){const t=a1;a1=a2;a2=t;}
-          A("CENTER",cc,e.R,a1,a2);A("FIT",cc,e.R+e.od/2,a1,a2);if(e.R>e.od/2)A("FIT",cc,e.R-e.od/2,a1,a2);
+          A("CENTER",cc,Rb,a1,a2);A("FIT",cc,Rb+e.od/2,a1,a2);if(Rb>e.od/2)A("FIT",cc,Rb-e.od/2,a1,a2);
         }else{ // ねじ込み継手・チーズ：脚ごとの外形
           const w=e.thread?e.od*0.75:e.od/2; // 溶接継手（突合せ）は直管と同じ太さ
           for(const d of inP)rect("FIT",c,P(vadd(e.c,vmul(d,e.R))),w);
