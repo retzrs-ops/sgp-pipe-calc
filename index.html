@@ -1042,6 +1042,10 @@ function computeRuns(){
     const span=o.parts.map(k=>{const pt=S.iso.parts[k];return isCtr(pt.t)?0:pt.t==="fpair"?packV():num(pt.len);});
     // 直結：部品どうしをパッキンだけ挟んでつなぐ（間に配管なし）。位置は前の部品から自動で決まる
     o.pieces.forEach(p=>{p.direct=!!(S.iso.pieces[p.key]||{}).direct&&canDirect(p.a,p.b);});
+    // 白管のニップル：選んだ配管はカット長＝ニップル長。芯々の長さ（fixed）は、ニップル長＋両端の引き寸法
+    o.pieces.forEach(p=>{p.nip=null;p.fixed=null;
+      const v=(SYS()==="thread"&&!run.diag&&!p.direct&&p.key!==d.adjKey&&d.nip)?num(d.nip[p.key]):null;
+      if(v!==null&&v>0){p.nip=v;try{p.fixed=v+endDed(p.a,p)+endDed(p.b,p);}catch(_){p.fixed=null;}}});
     // 端部のバルブ・フレキは全長に含める：起点側なら面間ぶん後ろから、終点側なら面間ぶん手前まで
     const pendLen=e=>G.nodes.get(e).type==="pend"?num(S.iso.parts[e].len):0;
     const sOff=pendLen(o.from),eOff=pendLen(o.to);
@@ -1050,14 +1054,16 @@ function computeRuns(){
     // ソケット：位置は入力せず、手前のカット寸から割り出す。「調整」のソケットは残りの寸法になる
     const sk=i=>S.iso.parts[o.parts[i]].t==="socket";
     const adjI=o.pieces.findIndex(p=>p.key===d.adjKey); // 調整管（1直線に1本）：その配管を残り寸法にする
-    const nipL=i=>{const q=o.pieces[i];return q&&d.nip?num(d.nip[q.key]):null;}; // ニップルの長さ（選ばれていれば）
-    const cutIn=i=>nipL(i)!==null&&i<o.parts.length?nipL(i):i<o.parts.length?(d.scut||{})[o.parts[i]]:d.lcut; // 配管 i のカット長の入力値（最後の配管は d.lcut）
+    const nipL=i=>{const q=o.pieces[i];return q&&q.nip!=null?q.nip:null;}; // ニップルの長さ（選ばれていれば）
+    const cutIn=i=>nipL(i)!==null?nipL(i):i<o.parts.length?(d.scut||{})[o.parts[i]]:d.lcut; // 配管 i のカット長の入力値（最後の配管は d.lcut）
     const lenOf=i=>{let c=num(cutIn(i));if(c===null)return null; // 配管 i の長さ＝カット＋両端の引き寸法
       if(SYS()==="thread"&&c>MAXLEN){ // 4m超の入力は「切った配管の合計」なので、自動ソケットのすき間の分を足して元の長さに戻す
         const q0=o.pieces[i],sz0=psz(q0),Sv=num(S.tbl.thread.S&&S.tbl.thread.S[sz0]),Nv=num(S.tbl.thread.N[sz0]);
         if(Sv!==null&&Nv!==null)c+=(Math.ceil(c/MAXLEN)-1)*(Sv-2*Nv);}
       try{const q=o.pieces[i];return c+endDed(q.a,q)+endDed(q.b,q);}catch(_){return null;}};
-    for(let i=0;i<(adjI<0?o.parts.length:adjI);i++)if(sk(i)){const st=endOf(i),L=lenOf(i);pos[i]=(st===null||L===null)?null:st+L;}
+    for(let i=0;i<(adjI<0?o.parts.length:adjI);i++){
+      if(sk(i)){const st=endOf(i),L=lenOf(i);pos[i]=(st===null||L===null)?null:st+L;}
+      else if(o.pieces[i].nip!=null){const st=endOf(i),F=o.pieces[i].fixed;pos[i]=(st===null||F===null)?null:st+F;}} // ニップル：手前の位置＋芯々の長さ
     if(adjI>=0){ // 調整：終点側から順に割り戻す（ソケットもバルブ・フレキ等も）
       let cur=(total===null||eOff===null)?null:total-eOff; // 最後の配管の終わりの位置
       for(let j=o.pieces.length-1;j>adjI;j--){
@@ -1065,7 +1071,10 @@ function computeRuns(){
         cur=(cur===null||L===null||sp===null||sp===undefined)?null:cur-L-sp;
         pos[j-1]=cur;}}
     const last=o.pieces.length-1;
-    if(o.pieces[last].direct){const e=endOf(o.parts.length);total=(e===null||eOff===null)?null:e+packV()+eOff;run.total=total;run.autoTotal=true;}else run.autoTotal=false;
+    const lp=o.pieces[last];
+    if(lp.direct){const e=endOf(o.parts.length);total=(e===null||eOff===null)?null:e+packV()+eOff;run.total=total;run.autoTotal=true;}
+    else if(lp.nip!=null&&adjI<0){const e=endOf(o.parts.length);total=(e===null||eOff===null||lp.fixed===null)?null:e+lp.fixed+eOff;run.total=total;run.autoTotal="nip";} // 最後の配管がニップル：全長は自動
+    else run.autoTotal=false;
     run.pos=pos;
     o.pieces.forEach((p,i)=>{
       p.len=null;p.lenErr=null;
@@ -1722,7 +1731,7 @@ function curRun(){return sel?G.rmap.get(sel.key):null;}
 function fieldsOf(run){
   const o=run.o,refA=REF[G.nodes.get(o.from).type],refB=REF[G.nodes.get(o.to).type],nb=numbering(run),adjIdx=o.pieces.findIndex(p=>p.key===rdat(run).adjKey),nipOfF=p=>{const v=p&&rdat(run).nip?num(rdat(run).nip[p.key]):null;return v;};
   const lastN=i=>NO(nb.base[i]+nb.cnt[i]); // 配管 i の最後の1本の番号（ソケットはこの番号で呼ぶ）
-  const fs=[run.autoTotal?{id:"total",label:`配管全長（直結で自動）`,cls:"total",auto:true,get:()=>run.total===null?"":r1(run.total),set:()=>{}}:{id:"total",label:run.diag?`芯々のズレ X（45° ${run.dirTxt}・斜め${run.total===null?"?":r1(run.total)}）`:`配管全長（${refA}〜${refB}）`,cls:"total",
+  const fs=[run.autoTotal?{id:"total",label:run.autoTotal==="nip"?`配管全長（ニップルで自動）`:`配管全長（直結で自動）`,cls:"total",auto:true,get:()=>run.total===null?"":r1(run.total),set:()=>{}}:{id:"total",label:run.diag?`芯々のズレ X（45° ${run.dirTxt}・斜め${run.total===null?"?":r1(run.total)}）`:`配管全長（${refA}〜${refB}）`,cls:"total",
     get:()=>{const d=rdat(run);return d.total??(run.total!==null&&!o.parts.length?run.total:"");},
     set:v=>{rdatW(run).total=v;},chip:"run"}];
   for(const e of [o.from,o.to])if(G.nodes.get(e).type==="pend"){const pt=S.iso.parts[e];
@@ -1733,6 +1742,9 @@ function fieldsOf(run){
     if(o.pieces[i].direct){
       fs.push({id:"pos:"+k,label:`起点→${nm}（直結で自動）`,short:"起点から（直結で自動）",cls:"pos",auto:true,get:()=>run.pos[i]===null?"":r1(run.pos[i]),set:()=>{},part:k});
       if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
+    }else if(o.pieces[i].nip!=null&&pt.t!=="socket"){ // ニップルの配管の後ろ：位置は手前の位置＋ニップルの長さから自動
+      fs.push({id:"pos:"+k,label:`起点→${nm}（ニップルで自動）`,short:isCtr(pt.t)?"起点から（中心・自動）":"起点から（自動）",cls:"pos",auto:true,get:()=>run.pos[i]===null||run.pos[i]===undefined?"":r1(run.pos[i]),set:()=>{},part:k});
+      if(!isCtr(pt.t)&&pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
     }else if(pt.t==="socket"){
       if(i===adjIdx)fs.push({id:"scut:"+k,label:`配管${lastN(i)} のカット寸（ソケット${lastN(i)}の手前・調整で残り寸法）`,short:`配管${lastN(i)}カット`,cls:"len",auto:true,get:()=>{const r=pieceCalc(o.pieces[i]);return r.cut!==undefined?cutTxt(r):"";},set:()=>{},part:k});
       else if(o.pieces[i]&&nipOfF(o.pieces[i])!==null)fs.push({id:"scut:"+k,label:`配管${lastN(i)} ニップル長`,short:`配管${lastN(i)}ニップル`,cls:"len",auto:true,get:()=>nipOfF(o.pieces[i]),set:()=>{},part:k});
@@ -1747,7 +1759,7 @@ function fieldsOf(run){
       if(pt.t!=="fpair")fs.push({id:"len:"+k,label:`${nm} 面間`,short:"面間",cls:"len",get:()=>pt.len??"",set:v=>{pt.len=v;},part:k});
     }
   });
-  if(adjIdx>=0&&adjIdx<o.parts.length) // 調整管があると、最後の配管は長さを入れる
+  if(adjIdx>=0&&adjIdx<o.parts.length&&o.pieces[o.pieces.length-1].nip==null) // 調整管があると、最後の配管は長さを入れる（最後がニップルなら不要）
     fs.push({id:"lcut",label:`配管${lastN(o.parts.length)} のカット寸（終端側）`,short:`配管${lastN(o.parts.length)}カット`,cls:"len",get:()=>rdat(run).lcut??"",set:v=>{rdatW(run).lcut=v;}});
   return fs;
 }
@@ -1807,7 +1819,7 @@ function refreshPanel(loadValue){
       else if(endSock)att=ac(`ソケット${no} 分（全長−両飲込）`,sockTxt(p),"sockin");
       const hi=last&&endSock&&sel.field&&sel.field.endsWith(":"+k0)?"cur":(sf&&k===0&&sel.field===sf.id?"cur":"");
       const adjB=`<button type="button" class="chk${rdat(run).adjKey===p.key?" on":""}" data-adjp="${p.key}" title="この配管を残り寸法で調整する（1直線に1本だけ）">調整管</button>`;
-      const nipB=c===1&&endSock?`<button type="button" class="chk${nipN!==null?" on":""}" data-nipp="${p.key}" title="直管にニップルを使う（規格の長さから選ぶ）">ニップル</button>`:"";
+      const nipB=SYS()==="thread"&&!run.diag&&c===1?`<button type="button" class="chk${nipN!==null?" on":""}" data-nipp="${p.key}" title="直管にニップルを使う（規格の長さから選ぶ）">ニップル</button>`:"";
       const tools=(k===0?adjB+nipB:"")+(last&&!endSock?dirBtn(p):""); // 4mで割れた2本目以降の行には同じボタンを出さない
       const chips=(c===1&&nipPick===p.key)?`<div class="nipchips">${nipLens().map(L=>`<button type="button" class="chk${nipN===L?" on":""}" data-nipv="${p.key}|${L}">${L}mm</button>`).join("")}<button type="button" class="chk" data-nipv="${p.key}|0">ニップルなし</button></div>`:"";
       out+=box(hi,head(`配管${no}`,tools),`<div class="cells c2">${cutC}${att}</div>${chips}`);}
@@ -1855,12 +1867,12 @@ rowBox.addEventListener("click",e=>{
   if(nb){nipPick=nipPick===nb.dataset.nipp?null:nb.dataset.nipp;refreshPanel(false);return;}
   const nv=e.target.closest("button[data-nipv]");
   if(nv){const run=curRun();if(run){const str=nv.dataset.nipv,cu=str.lastIndexOf("|"),pk=str.slice(0,cu),v=+str.slice(cu+1);pushUndo();
-      const d=rdatW(run);d.nip=d.nip||{};if(v>0)d.nip[pk]=v;else delete d.nip[pk];
+      const d=rdatW(run);d.nip=d.nip||{};if(v>0){d.nip[pk]=v;if(d.adjKey===pk)delete d.adjKey;}else delete d.nip[pk]; // 調整管とニップルは同時に使えない
       nipPick=null;save();renderIso();refreshPanel(false);}return;}
   const aj=e.target.closest("button[data-adjp]");
   if(aj){const run=curRun();
     if(run){pushUndo();const d=rdatW(run),on=d.adjKey!==aj.dataset.adjp;
-      if(on)d.adjKey=aj.dataset.adjp;else delete d.adjKey;
+      if(on){d.adjKey=aj.dataset.adjp;if(d.nip)delete d.nip[aj.dataset.adjp];}else delete d.adjKey; // 調整管にしたらニップルは外す
       save();renderIso();refreshPanel(false);
       toast(on?"この配管を調整管（残り寸法）にしました":"調整管を外しました");}
     return;}
