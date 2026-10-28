@@ -500,6 +500,10 @@ body.kp-open .wrap{padding-bottom:340px}
       <label for="pack" style="margin:0;font-size:.9rem;color:var(--ink)">フランジパッキン厚（共通）</label>
       <input id="pack" class="kp" type="text" inputmode="none" autocomplete="off" aria-label="フランジパッキン厚（共通）"> <span>mm</span>
     </div>
+    <div class="gaprow" id="nipRow">
+      <label for="nipList" style="margin:0;font-size:.9rem;color:var(--ink)">ニップル長さの候補（mm・カンマ区切り）</label>
+      <input id="nipList" type="text" inputmode="text" autocomplete="off" style="max-width:none;text-align:left">
+    </div>
     <p class="note" id="packNote">アイソメ図で、バルブ・フレキのフランジ接続部、端フランジ、「フランジ2枚」の間に入るパッキンの厚さです。その分をカット長から差し引きます。</p>
     <div class="tbl-wrap"><table id="tbl"></table></div>
     <p class="note" id="tblNote"></p>
@@ -610,6 +614,8 @@ const MODES={
     note:"継手の初期値は JIS B 2301 ねじ込み式可鍛鋳鉄製管継手の芯先寸法（mm）、ねじ込み長さは一般的な目安です。締め込み具合で変わるので、現場や社内基準の値に合わせてください。ねじ込みフランジの控え寸法（フランジ面から管端まで）は、25A＝10mm を基準にねじ込み長さの比率で各口径を割り出した値です。径違いソケット長（大径側の口径の行）は、白管アイソメで途中にレジューサを置いたときに使います。お使いの継手の全長を入れてください。ソケット長は白管アイソメのソケット用の目安値（全長）で、4mを超える配管に自動で入るソケットにも使います。お使いの継手に合わせて直してください。入力した値はこのブラウザに保存されます。"
   }
 };
+const NIP_DEF="50,65,75,100,125,150,200,250,300"; // ニップル長さの候補の初期値（設定欄で変更できる）
+const nipLens=()=>String(S.nipList??NIP_DEF).split(/[,、\s]+/).map(Number).filter(v=>v>0).sort((a,b)=>a-b);
 const KEY="sgp-cut-calc-v1";
 const clone=o=>JSON.parse(JSON.stringify(o));
 let S=load();
@@ -626,6 +632,7 @@ function fromSaved(s){
     if(s.mode)n.mode=s.mode;
     if(s.gap!==undefined)n.gap=s.gap;
     if(s.pack!==undefined)n.pack=s.pack;
+    if(s.nipList!==undefined)n.nipList=s.nipList;
     const oldW=s.tbl&&s.tbl.LR?s.tbl:(s.tbl&&s.tbl.weld);           // 旧版データの引き継ぎ
     if(oldW)for(const k in oldW)n.tbl.weld[k]=oldW[k];
     if(s.tbl&&s.tbl.thread)for(const k in s.tbl.thread)n.tbl.thread[k]=s.tbl.thread[k];
@@ -753,6 +760,9 @@ function renderTbl(){
   document.getElementById("packRow").style.display=document.getElementById("packNote").style.display=isIso()?"":"none";
   const pk=document.getElementById("pack");pk.value=S.pack??"3";
   pk.oninput=()=>{S.pack=pk.value;save();update();};
+  document.getElementById("nipRow").style.display=TM()==="thread"?"":"none";
+  const nl=document.getElementById("nipList");nl.value=S.nipList??NIP_DEF;
+  nl.onchange=()=>{S.nipList=nl.value;save();update();};
   const t=document.getElementById("tbl");
   t.innerHTML=`<tr><th>口径</th>${Object.values(M.cols).map(v=>`<th>${v}</th>`).join("")}</tr>`+
     SIZES.map(s=>`<tr><th>${s}A</th>${Object.keys(M.cols).map(f=>`<td><input class="kp" type="text" inputmode="none" autocomplete="off" aria-label="${s}A ${M.cols[f]}" data-f="${f}" data-s="${s}" value="${T[f][s]??""}" placeholder="未設定"></td>`).join("")}</tr>`).join("");
@@ -1154,8 +1164,6 @@ function addSocketEnd(){
 
 /* 配管の番号：4m を超える配管は 4m ごとに割るので、割った1本ずつに番号が付く（区間の先頭から通し番号）
    base[j]＝配管 j より前にある配管の本数、cnt[j]＝配管 j が割れて出来る本数 */
-/* ニップルの規格の長さ（mm）。白管の直管に、ねじ込みのニップルを使うときに選ぶ。※目安。お使いの規格表の値に合わせて直してください */
-const NIP_LEN={"15":[40,50,65,75,100,150],"20":[40,50,65,75,100,150],"25":[40,50,65,75,100,150],"32":[50,65,75,100,150,200],"40":[50,65,75,100,150,200],"50":[50,65,75,100,150,200],"65":[65,75,100,150,200],"80":[65,75,100,150,200]};
 let nipPick=null; // ニップルの長さを選んでいる配管（画面の状態）
 function numbering(run){const base=[],cnt=[];let acc=0;
   for(const p of run.o.pieces){const r=p.direct?null:pieceCalc(p),c=r&&r.cuts?r.cuts.length:1;base.push(acc);cnt.push(c);acc+=c;}
@@ -1791,7 +1799,7 @@ function refreshPanel(loadValue){
       const adjB=`<button type="button" class="chk${rdat(run).adjKey===p.key?" on":""}" data-adjp="${p.key}" title="この配管を残り寸法で調整する（1直線に1本だけ）">調整管</button>`;
       const nipB=c===1&&endSock?`<button type="button" class="chk${nipN!==null?" on":""}" data-nipp="${p.key}" title="直管にニップルを使う（規格の長さから選ぶ）">ニップル</button>`:"";
       const tools=adjB+nipB+(last&&!endSock?dirBtn(p):"");
-      const chips=(c===1&&nipPick===p.key)?`<div class="nipchips">${(NIP_LEN[psz(p)]||[]).map(L=>`<button type="button" class="chk${nipN===L?" on":""}" data-nipv="${p.key}|${L}">${L}mm</button>`).join("")}<button type="button" class="chk" data-nipv="${p.key}|0">ニップルなし</button></div>`:"";
+      const chips=(c===1&&nipPick===p.key)?`<div class="nipchips">${nipLens().map(L=>`<button type="button" class="chk${nipN===L?" on":""}" data-nipv="${p.key}|${L}">${L}mm</button>`).join("")}<button type="button" class="chk" data-nipv="${p.key}|0">ニップルなし</button></div>`:"";
       out+=box(hi,head(`配管${no}`,tools),`<div class="cells c2">${cutC}${att}</div>${chips}`);}
     return out;};
   let h=box("first","",`<div class="cells c3">${cell(t0,tLab)}</div>${swingRow}`);
