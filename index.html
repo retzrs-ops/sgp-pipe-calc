@@ -2305,24 +2305,27 @@ function buildModel(){
     const v=dir3k(pts[0],pts[1]),l=Math.hypot(...v)||1;return V3(v[0]/l,v[1]/l,v[2]/l);};
   for(const r of G.runs){const l=len(r);runInfo.set(r,l);}
   const adjR=new Map();for(const r of G.runs){for(const k of [r.a,r.b]){if(!adjR.has(k))adjR.set(k,[]);adjR.get(k).push(r);}}
+  const comp={};let nc=0; // つながっている配管のまとまり（系統）
   for(const r0 of G.runs){
     if(P3[r0.a]!==undefined||P3[r0.b]!==undefined)continue;
-    P3[r0.a]=V3(0,0,0);const q=[r0.a];
+    P3[r0.a]=V3(0,0,0);comp[r0.a]=nc;const q=[r0.a];
     while(q.length){const u=q.shift();for(const r of adjR.get(u)||[]){const v=r.a===u?r.b:r.a;if(P3[v]!==undefined)continue;
-      P3[v]=vadd(P3[u],vmul(stepOf(r,u),runInfo.get(r).L));q.push(v);}}
+      P3[v]=vadd(P3[u],vmul(stepOf(r,u),runInfo.get(r).L));comp[v]=comp[u];q.push(v);}}
+    nc++;
   }
-  const els=[],dims=[];
+  const els=[],dims=[];let CUR=0;
+  const pushE=(...a)=>{for(const e of a){e.comp=CUR;els.push(e);}},pushD=(...a)=>{for(const d of a){d.comp=CUR;dims.push(d);}};
   const fitCE=(nd)=>{const mx=String(Math.max(...nd.pieces.map(q=>+psz(q))));
     if(nd.type==="elbow45")return {R:nv(TB,"L45",mx)||22,mx};
     if(TH)return {R:nv(TB,nd.type==="tee"?"T":"L",mx)||30,mx};
     const short=nd.type==="elbow"&&(S.iso.opt[nd.k]||{}).short;return {R:nv(TB,nd.type==="tee"?"T":(short?"SR":"LR"),mx)||38,mx};};
   const kae=s=>nv(TB,"F",s)||5,pk=packV();
   for(const r of G.runs){
-    const o=r.o,A0=P3[o.from],B0=P3[o.to];if(!A0||!B0)continue;
+    const o=r.o,A0=P3[o.from],B0=P3[o.to];if(!A0||!B0)continue;CUR=comp[o.from]||0;
     const {L,unk}=runInfo.get(r);if(L<=0)continue;
     const dir=vmul(vadd(B0,vmul(A0,-1)),1/L),at3=s=>vadd(A0,vmul(dir,s));
     const sz0=psz(o.pieces[0]),szs=[...new Set(o.pieces.map(psz))];
-    dims.push({a:A0,b:B0,dir,text:unk?`寸法不明 約${L}`:`${szs.map(x=>x+"A").join("→")} ${r.diag&&r.offset?"ズレ"+r1(r.offset)+" 斜め"+r1(L)+"（45° "+r.dirTxt+"）":r1(L)}`,unk,run:true});
+    pushD({a:A0,b:B0,dir,text:unk?`寸法不明 約${L}`:`${szs.map(x=>x+"A").join("→")} ${r.diag&&r.offset?"ズレ"+r1(r.offset)+" 斜め"+r1(L)+"（45° "+r.dirTxt+"）":r1(L)}`,unk,run:true});
     // 部品の位置（不明なら描いた位置から割り出す）
     const latIdx=k=>{let n=0;for(const p of o.pieces){const pts=p.pts[0]===(o.pieces.indexOf(p)===0?o.from:null)?p.pts:p.pts;}return 0;};
     const tot=gl(r);let acc=0;const latPos={};
@@ -2334,14 +2337,14 @@ function buildModel(){
       const sgn=atStart?1:-1,base=atStart?0:L,S0=x=>base+sgn*x;
       switch(nd.type){
         case "open":return S0(0);
-        case "flange":{els.push({t:"flange",c:at3(S0(0)),ax:vmul(dir,sgn),th:FL_T[sz]||14,od:FL_OD[sz]||120});return S0(kae(sz));}
+        case "flange":{pushE({t:"flange",c:at3(S0(0)),ax:vmul(dir,sgn),th:FL_T[sz]||14,od:FL_OD[sz]||120});return S0(kae(sz));}
         case "elbow":case "tee":case "elbow45":return S0(fitCE(nd).R);
         case "pend":{const pt=S.iso.parts[node],span=num(pt.len)||150,scr=pt.conn==="screw";
-          els.push({t:pt.t,a:at3(S0(0)),b:at3(S0(span)),od:SGP_OD[sz],span,label:"面間 "+(num(pt.len)===null?"?":r1(span))});
+          pushE({t:pt.t,a:at3(S0(0)),b:at3(S0(span)),od:SGP_OD[sz],span,label:"面間 "+(num(pt.len)===null?"?":r1(span))});
           if(scr)return S0(span);
           const tf=FL_T[sz]||14,g=pt.noPack?0:pk;
-          els.push({t:"flange",c:at3(S0(span)),ax:vmul(dir,-sgn),th:tf,od:FL_OD[sz]||120});        // 部品側フランジ
-          els.push({t:"flange",c:at3(S0(span+g)),ax:vmul(dir,sgn),th:tf,od:FL_OD[sz]||120});      // 配管側フランジ
+          pushE({t:"flange",c:at3(S0(span)),ax:vmul(dir,-sgn),th:tf,od:FL_OD[sz]||120});        // 部品側フランジ
+          pushE({t:"flange",c:at3(S0(span+g)),ax:vmul(dir,sgn),th:tf,od:FL_OD[sz]||120});      // 配管側フランジ
           return S0(span+g+kae(sz));}
         default:return S0(0);
       }};
@@ -2357,37 +2360,37 @@ function buildModel(){
         else if(pt.conn==="screw"){end=P.s;}
         else end=P.s-pk-kae(sz);
       }else end=last;
-      if(!p.direct&&end>cur){els.push({t:"pipe",a:at3(cur),b:at3(end),od});
+      if(!p.direct&&end>cur){pushE({t:"pipe",a:at3(cur),b:at3(end),od});
         if(TH){const rc=pieceCalc(p);if(rc.cuts){ // 4m超：自動ソケットを、切った長さの比で配管の上に置く
           const Ls=nv(TB,"S",sz)||40,sd=rc.sd||0,tot=rc.cuts.reduce((a,b)=>a+b,0)+(rc.cuts.length-1)*sd;let acc=0;
-          for(let k2=0;k2<rc.cuts.length-1;k2++){acc+=rc.cuts[k2];const c=cur+(end-cur)*(acc+k2*sd+sd/2)/tot;els.push({t:"socket",a:at3(c-Ls/2),b:at3(c+Ls/2),od});}}}}
+          for(let k2=0;k2<rc.cuts.length-1;k2++){acc+=rc.cuts[k2];const c=cur+(end-cur)*(acc+k2*sd+sd/2)/tot;pushE({t:"socket",a:at3(c-Ls/2),b:at3(c+Ls/2),od});}}}}
       if(i<o.parts.length){const P=parts[i],pt=P.pt,sz2=psz(o.pieces[i+1]),tf=FL_T[sz]||14,fod=FL_OD[sz]||120;
-        if(pt.t==="socket"){const Ls=nv(TB,"S",sz)||40;els.push({t:"socket",a:at3(P.s-Ls/2),b:at3(P.s+Ls/2),od});cur=P.s+Ls/2;}
+        if(pt.t==="socket"){const Ls=nv(TB,"S",sz)||40;pushE({t:"socket",a:at3(P.s-Ls/2),b:at3(P.s+Ls/2),od});cur=P.s+Ls/2;}
         else if(pt.t==="reducer"){const R=nv(TB,TH?"RS":"R",String(Math.max(+sz,+sz2)))||50;
-          els.push({t:"reducer",a:at3(P.s-R/2),b:at3(P.s+R/2),od1:od,od2:SGP_OD[sz2]||30});cur=P.s+R/2;}
-        else if(pt.t==="fpair"){els.push({t:"flange",c:at3(P.s),ax:vmul(dir,-1),th:tf,od:fod},{t:"flange",c:at3(P.s+pk),ax:dir,th:tf,od:fod});cur=P.s+pk+kae(sz2);}
+          pushE({t:"reducer",a:at3(P.s-R/2),b:at3(P.s+R/2),od1:od,od2:SGP_OD[sz2]||30});cur=P.s+R/2;}
+        else if(pt.t==="fpair"){pushE({t:"flange",c:at3(P.s),ax:vmul(dir,-1),th:tf,od:fod},{t:"flange",c:at3(P.s+pk),ax:dir,th:tf,od:fod});cur=P.s+pk+kae(sz2);}
         else{
-          els.push({t:pt.t,a:at3(P.s),b:at3(P.e),od,span:P.span,label:"面間 "+(num(pt.len)===null?"?":r1(P.span))});
+          pushE({t:pt.t,a:at3(P.s),b:at3(P.e),od,span:P.span,label:"面間 "+(num(pt.len)===null?"?":r1(P.span))});
           const flg=pt.conn!=="screw";
-          if(flg){els.push({t:"flange",c:at3(P.s),ax:dir,th:tf,od:fod},{t:"flange",c:at3(P.e),ax:vmul(dir,-1),th:tf,od:fod});}
-          if(flg&&!p.direct)els.push({t:"flange",c:at3(P.s-pk),ax:vmul(dir,-1),th:tf,od:fod});
+          if(flg){pushE({t:"flange",c:at3(P.s),ax:dir,th:tf,od:fod},{t:"flange",c:at3(P.e),ax:vmul(dir,-1),th:tf,od:fod});}
+          if(flg&&!p.direct)pushE({t:"flange",c:at3(P.s-pk),ax:vmul(dir,-1),th:tf,od:fod});
           const nextDirect=o.pieces[i+1]&&o.pieces[i+1].direct;
-          if(flg&&!nextDirect)els.push({t:"flange",c:at3(P.e+pk),ax:dir,th:tf,od:fod});
+          if(flg&&!nextDirect)pushE({t:"flange",c:at3(P.e+pk),ax:dir,th:tf,od:fod});
           cur=nextDirect?P.e+pk:(flg?P.e+pk+kae(sz2):P.e);
         }}
     });
     // 配管ごとの寸法（アイソメ用）
     o.pieces.forEach((p,i)=>{if(p.direct)return;const rc=pieceCalc(p);
       const a=i===0?0:(parts[i-1].e),b=i===o.pieces.length-1?L:parts[i].s;
-      dims.push({a:at3(a),b:at3(b),dir,piece:true,text:p.len===null||unk?`${psz(p)}A 寸法不明 約${Math.round((b-a)/10)*10}`:`${psz(p)}A / ${r1(p.len)}`,unk:p.len===null||unk});});
+      pushD({a:at3(a),b:at3(b),dir,piece:true,text:p.len===null||unk?`${psz(p)}A 寸法不明 約${Math.round((b-a)/10)*10}`:`${psz(p)}A / ${r1(p.len)}`,unk:p.len===null||unk});});
   }
   // 継手（エルボ・チーズ）
   for(const nd of G.nodes.values()){
-    if(nd.type!=="elbow"&&nd.type!=="tee"&&nd.type!=="elbow45")continue;const c=P3[nd.k];if(!c)continue;
+    if(nd.type!=="elbow"&&nd.type!=="tee"&&nd.type!=="elbow45")continue;const c=P3[nd.k];if(!c)continue;CUR=comp[nd.k]||0;
     const {R,mx}=fitCE(nd),legs=(adjR.get(nd.k)||[]).map(r=>stepOf(r,nd.k));
-    els.push({t:nd.type==="tee"?"tee":"elbow",c,legs,R,od:SGP_OD[mx]||30,thread:TH});
+    pushE({t:nd.type==="tee"?"tee":"elbow",c,legs,R,od:SGP_OD[mx]||30,thread:TH});
   }
-  return {els,dims,P3,unknown:dims.some(d=>d.unk)};
+  return {els,dims,P3,comp,nc,unknown:dims.some(d=>d.unk)};
 }
 
 function makeDXF(){
@@ -2406,6 +2409,7 @@ function makeDXF(){
   const ISO={key:"iso",name:"アイソメ図",ex:null};
   const isoP=p=>({x:(p.x+p.y)*C3,y:(p.y-p.x)*0.5+p.z});
   // 図形を各図の座標で作る
+  let ELS=M.els,DIMS=M.dims,RUNS=G.runs; // 描く対象（系統ごとに切り替える）
   const draw=v=>{
     const E=[],P=v.ex?(p=>({x:vdot(p,v.ex),y:vdot(p,v.ey)})):isoP;
     const L=(ly,a,b)=>E.push({k:"L",ly,a,b}),C=(ly,c,r)=>E.push({k:"C",ly,c,r}),A=(ly,c,r,a1,a2)=>E.push({k:"A",ly,c,r,a1,a2}),T=(ly,p,s,h,rot)=>E.push({k:"T",ly,p,s,h:h||TXH,rot:rot||0});
@@ -2414,7 +2418,7 @@ function makeDXF(){
     const off=(p,n,h)=>({x:p.x+n.x*h,y:p.y+n.y*h});
     let pc=0;
     const rect=(ly,a,b,h)=>{const u=u2(a,b),n={x:-u.y,y:u.x};const p1=off(a,n,h),p2=off(b,n,h),p3=off(b,n,-h),p4=off(a,n,-h);L(ly,p1,p2);L(ly,p2,p3);L(ly,p3,p4);L(ly,p4,p1);};
-    for(const e of M.els){
+    for(const e of ELS){
       if(e.t==="pipe"){const d=vmul(vadd(e.b,vmul(e.a,-1)),1);const ln3=Math.hypot(d.x,d.y,d.z)||1,du=vmul(d,1/ln3);
         if(!v.ex)continue; // アイソメは下で芯から芯まで通して描く
         if(along(du)){const c=P(e.a);C("PIPE",c,e.od/2);L("CENTER",{x:c.x-e.od*0.7,y:c.y},{x:c.x+e.od*0.7,y:c.y});L("CENTER",{x:c.x,y:c.y-e.od*0.7},{x:c.x,y:c.y+e.od*0.7});continue;}
@@ -2459,13 +2463,13 @@ function makeDXF(){
         }
       }
     }
-    if(!v.ex){for(const r of G.runs){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(a3&&b3)L("PIPE",P(a3),P(b3));}}
+    if(!v.ex){for(const r of RUNS){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(a3&&b3)L("PIPE",P(a3),P(b3));}}
     // 中心線（一点鎖線）
-    if(v.ex){for(const r of G.runs){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(!a3||!b3)continue;const d=vadd(b3,vmul(a3,-1)),l=Math.hypot(d.x,d.y,d.z);if(l<1||along(vmul(d,1/l)))continue;
+    if(v.ex){for(const r of RUNS){const a3=M.P3[r.o.from],b3=M.P3[r.o.to];if(!a3||!b3)continue;const d=vadd(b3,vmul(a3,-1)),l=Math.hypot(d.x,d.y,d.z);if(l<1||along(vmul(d,1/l)))continue;
       const a=P(a3),b=P(b3),u=u2(a,b),x=Math.min(30,TXH);L("CENTER",off(a,u,-x),off(b,u,x));}}
     // 寸法の文字
-    for(const d of M.dims){
-      if(v.ex&&!d.run)continue;if(!v.ex&&d.run&&M.dims.some(q=>q.piece&&q.a===d.a))continue;
+    for(const d of DIMS){
+      if(v.ex&&!d.run)continue;if(!v.ex&&d.run&&DIMS.some(q=>q.piece&&q.a===d.a))continue;
       if(v.ex&&along(d.dir))continue;
       const a=P(d.a),b=P(d.b),m={x:(a.x+b.x)/2,y:(a.y+b.y)/2},u=u2(a,b);let n={x:-u.y,y:u.x};if(n.y<0||(Math.abs(n.y)<1e-6&&n.x<0))n={x:-n.x,y:-n.y};
       const dist=v.ex?Math.max(TXH*1.6,80):TXH*1.2,p=off(m,n,dist);
@@ -2477,15 +2481,26 @@ function makeDXF(){
   const bbox=E=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;const add=(x,y)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);};
     for(const e of E){if(e.k==="L"){add(e.a.x,e.a.y);add(e.b.x,e.b.y);}else if(e.k==="C"||e.k==="A"){add(e.c.x-e.r,e.c.y-e.r);add(e.c.x+e.r,e.c.y+e.r);}else if(e.k==="T"){add(e.p.x,e.p.y);add(e.p.x+e.s.length*e.h*0.9,e.p.y+e.h);}}
     return x0>x1?{x0:0,y0:0,x1:1,y1:1}:{x0,y0,x1,y1};};
-  const out={};for(const v of [...views,ISO]){const E=draw(v);out[v.key]={v,E,b:bbox(E)};}
-  // 配置（第三角法）：上に平面図、下段に 左・正面・右・背面、右上にアイソメ図
-  const gap=Math.max(ext*0.25,TXH*6),place={};
-  const f=out.front.b;place.front={dx:0,dy:0};
-  place.top={dx:0,dy:f.y1+gap-out.top.b.y0};
-  place.left={dx:f.x0-gap-out.left.b.x1,dy:0};
-  place.right={dx:f.x1+gap-out.right.b.x0,dy:0};
-  const rb=out.right.b;place.back={dx:rb.x1+place.right.dx+gap-out.back.b.x0,dy:0};
-  place.iso={dx:rb.x0+place.right.dx-out.iso.b.x0,dy:f.y1+gap-out.iso.b.y0};
+  // 系統ごとに一式を作る
+  const gap=Math.max(ext*0.25,TXH*6),sets=[];
+  for(let c=0;c<M.nc;c++){
+    ELS=M.els.filter(e=>e.comp===c);DIMS=M.dims.filter(d=>d.comp===c);RUNS=G.runs.filter(r=>(M.comp[r.o.from]||0)===c);
+    if(!ELS.length&&!RUNS.length)continue;
+    const out={};for(const v of [...views,ISO]){const E=draw(v);out[v.key]={v,E,b:bbox(E)};}
+    // 配置（第三角法）：上に平面図、下段に 左・正面・右・背面、右上にアイソメ図
+    const place={},f=out.front.b;place.front={dx:0,dy:0};
+    place.top={dx:0,dy:f.y1+gap-out.top.b.y0};
+    place.left={dx:f.x0-gap-out.left.b.x1,dy:0};
+    place.right={dx:f.x1+gap-out.right.b.x0,dy:0};
+    const rb=out.right.b;place.back={dx:rb.x1+place.right.dx+gap-out.back.b.x0,dy:0};
+    place.iso={dx:rb.x0+place.right.dx-out.iso.b.x0,dy:f.y1+gap-out.iso.b.y0};
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(const k in out){const b=out[k].b,pl=place[k];x0=Math.min(x0,b.x0+pl.dx);y0=Math.min(y0,b.y0+pl.dy-TXH*4);x1=Math.max(x1,b.x1+pl.dx);y1=Math.max(y1,b.y1+pl.dy);}
+    sets.push({out,place,box:{x0,y0,x1,y1}});
+  }
+  // 系統ごとの一式を上から順に、間をあけて並べる（CADで系統ごとに扱えるよう座標を離す）
+  let curY=0;const left=Math.min(...sets.map(t=>t.box.x0));
+  for(const t of sets){t.ox=left-t.box.x0;t.oy=curY-(t.box.y1+TXH*4);curY=t.box.y0+t.oy-gap*2;}
   // DXF（R12）を書く
   const n3=v=>(Math.round(v*1000)/1000).toString();
   const lines=[];const w=(...a)=>{for(let i=0;i<a.length;i+=2)lines.push(String(a[i]),String(a[i+1]));};
@@ -2497,22 +2512,25 @@ function makeDXF(){
   w(0,"TABLE",2,"LAYER",70,LAY.length);for(const [n,c,lt] of LAY)w(0,"LAYER",2,n,70,0,62,c,6,lt);w(0,"ENDTAB");
   w(0,"TABLE",2,"STYLE",70,1,0,"STYLE",2,"STANDARD",70,0,40,"0.0",41,"1.0",50,"0.0",71,0,42,"2.5",3,"txt",4,"extfont2",0,"ENDTAB",0,"ENDSEC");
   w(0,"SECTION",2,"ENTITIES");
-  for(const key in out){const {v,E}=out[key],pl=place[key],X=x=>n3(x+pl.dx),Y=y=>n3(y+pl.dy);
-    for(const e of E){
-      if(e.k==="L")w(0,"LINE",8,e.ly,10,X(e.a.x),20,Y(e.a.y),30,0,11,X(e.b.x),21,Y(e.b.y),31,0);
-      else if(e.k==="C")w(0,"CIRCLE",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r));
-      else if(e.k==="A")w(0,"ARC",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r),50,n3(e.a1),51,n3(e.a2));
-      else if(e.k==="T")w(0,"TEXT",8,e.ly,10,X(e.p.x),20,Y(e.p.y),30,0,40,n3(e.h),1,dxfTxt(e.s),50,n3(e.rot));
+  sets.forEach((t,si)=>{
+    if(sets.length>1)w(0,"TEXT",8,"NOTE",10,n3(t.box.x0+t.ox),20,n3(t.box.y1+t.oy+TXH*1.5),30,0,40,n3(TXH*2.2),1,dxfTxt(`系統${si+1}（アイソメ図でつながっていない配管ごとに分けています）`),50,0);
+    for(const key in t.out){const {v,E}=t.out[key],pl=t.place[key],X=x=>n3(x+pl.dx+t.ox),Y=y=>n3(y+pl.dy+t.oy);
+      for(const e of E){
+        if(e.k==="L")w(0,"LINE",8,e.ly,10,X(e.a.x),20,Y(e.a.y),30,0,11,X(e.b.x),21,Y(e.b.y),31,0);
+        else if(e.k==="C")w(0,"CIRCLE",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r));
+        else if(e.k==="A")w(0,"ARC",8,e.ly,10,X(e.c.x),20,Y(e.c.y),30,0,40,n3(e.r),50,n3(e.a1),51,n3(e.a2));
+        else if(e.k==="T")w(0,"TEXT",8,e.ly,10,X(e.p.x),20,Y(e.p.y),30,0,40,n3(e.h),1,dxfTxt(e.s),50,n3(e.rot));
+      }
+      const b=t.out[key].b;w(0,"TEXT",8,"NOTE",10,X(b.x0),20,Y(b.y0-TXH*3),30,0,40,n3(TXH*1.5),1,dxfTxt((sets.length>1?`系統${si+1} `:"")+v.name),50,0);
     }
-    const b=out[key].b;w(0,"TEXT",8,"NOTE",10,n3(b.x0+pl.dx),20,n3(b.y0+pl.dy-TXH*3),30,0,40,n3(TXH*1.5),1,dxfTxt(v.name),50,0);
-  }
-  const fb=out.front.b,ny=fb.y0-TXH*8;
-  const notes=[`SGP 配管図（${SYS()==="thread"?"白管・ねじ込み":"黒管・溶接"}）　${today().s}${S.iso.meta&&S.iso.meta.at?"　最終更新 "+metaText(S.iso.meta):""}`,
+  });
+  const ny=curY+gap;
+  const notes=[`SGP 配管図（${SYS()==="thread"?"白管・ねじ込み":"黒管・溶接"}）　${today().s}${S.iso.meta&&S.iso.meta.at?"　最終更新 "+metaText(S.iso.meta):""}${sets.length>1?`　系統数 ${sets.length}`:""}`,
     "単位：mm　中心線：一点鎖線　配管・フランジ・エルボ外形：実寸（SGP外径、JIS 10Kフランジの目安寸法）",
     "バルブ・フレキは記号表示（面間は入力値）。フランジ間のすき間はパッキン厚。",
     M.unknown?"「寸法不明 約○○」は寸法が未入力のため、アイソメ図で描いた長さから推定した値です。":"",
     `${COPY}　計算値・作図は目安です。施工前に必ず現物・メーカー資料で確認してください。`].filter(Boolean);
-  notes.forEach((t,i)=>w(0,"TEXT",8,"NOTE",10,n3(fb.x0+place.left.dx+out.left.b.x0-place.left.dx),20,n3(ny-i*TXH*1.8),30,0,40,n3(TXH),1,dxfTxt(t),50,0));
+  notes.forEach((tx2,i)=>w(0,"TEXT",8,"NOTE",10,n3(left),20,n3(ny-i*TXH*1.8),30,0,40,n3(TXH),1,dxfTxt(tx2),50,0));
   w(0,"ENDSEC",0,"EOF");
   return toSJIS(lines.join("\r\n")+"\r\n");
 }
